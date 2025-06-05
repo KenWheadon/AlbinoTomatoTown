@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title id="page-title">Garden Town MVP</title>
+    <script>
+      // Set title from config when available
+      document.addEventListener("DOMContentLoaded", () => {
+        if (window.CONFIG?.SITE_TITLE) {
+          document.getElementById("page-title").textContent =
+            window.CONFIG.SITE_TITLE;
+          document.title = window.CONFIG.SITE_TITLE;
+        }
+      });
+    </script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Comic Sans MS", cursive, sans-serif;
+        background: linear-gradient(135deg, #87ceeb 0%, #98fb98 100%);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .scene {
+        position: relative;
+        width: 800px;
+        height: 600px;
+        background: linear-gradient(
+          to bottom,
+          #87ceeb 0%,
+          #90ee90 30%,
+          #228b22 100%
+        );
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+      }
+
+      .character-container {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .character-container:hover {
+        transform: translate(-50%, -50%) scale(1.1);
+      }
+
+      .character-image {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid #fff;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+      }
+
+      .character-fallback {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        background: #ff6b6b;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 60px;
+        border: 4px solid #fff;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+      }
+
+      .menu-popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        z-index: 1000;
+        display: none;
+      }
+
+      .menu-button {
+        display: block;
+        width: 200px;
+        padding: 15px;
+        margin: 10px 0;
+        background: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 18px;
+        cursor: pointer;
+        transition: background 0.3s ease;
+      }
+
+      .menu-button:hover {
+        background: #45a049;
+      }
+
+      .info-popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        padding: 30px;
+        max-width: 400px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        z-index: 1001;
+        display: none;
+      }
+
+      .close-button {
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #666;
+      }
+
+      .close-button:hover {
+        color: #333;
+      }
+
+      .chat-popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        padding: 20px;
+        width: 600px;
+        height: 400px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        z-index: 1001;
+        display: none;
+      }
+
+      .chat-container {
+        display: flex;
+        height: 100%;
+        gap: 20px;
+      }
+
+      .chat-character {
+        flex-shrink: 0;
+      }
+
+      .chat-character-image {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #4caf50;
+      }
+
+      .chat-character-fallback {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: #ff6b6b;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 48px;
+        border: 3px solid #4caf50;
+      }
+
+      .chat-section {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .chat-history {
+        flex: 1;
+        border: 2px solid #ddd;
+        border-radius: 10px;
+        padding: 15px;
+        overflow-y: auto;
+        margin-bottom: 15px;
+        background: white;
+      }
+
+      .chat-input-container {
+        display: flex;
+        gap: 10px;
+      }
+
+      .chat-input {
+        flex: 1;
+        padding: 10px;
+        border: 2px solid #4caf50;
+        border-radius: 8px;
+        font-size: 16px;
+      }
+
+      .send-button {
+        padding: 10px 20px;
+        background: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+      }
+
+      .send-button:hover {
+        background: #45a049;
+      }
+
+      .send-button:disabled {
+        background: #cccccc;
+        cursor: not-allowed;
+      }
+
+      .chat-message {
+        margin-bottom: 10px;
+        padding: 8px 12px;
+        border-radius: 8px;
+        max-width: 80%;
+      }
+
+      .user-message {
+        background: #e3f2fd;
+        margin-left: auto;
+        text-align: right;
+      }
+
+      .character-message {
+        background: #f1f8e9;
+      }
+
+      .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="scene" id="main-scene">
+      <div class="character-container" id="character-container">
+        <img
+          class="character-image"
+          id="character-image"
+          src="img/albinotomato.png"
+          alt="Albino Tomato"
+          style="display: none"
+        />
+        <div class="character-fallback" id="character-fallback">🍅</div>
+      </div>
+    </div>
+
+    <!-- Overlay -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- Menu Popup -->
+    <div class="menu-popup" id="menu-popup">
+      <button class="menu-button" id="info-button">📖 Info</button>
+      <button class="menu-button" id="chat-button">💬 Chat</button>
+    </div>
+
+    <!-- Info Popup -->
+    <div class="info-popup" id="info-popup">
+      <button class="close-button" id="info-close">&times;</button>
+      <div id="info-content"></div>
+    </div>
+
+    <!-- Chat Popup -->
+    <div class="chat-popup" id="chat-popup">
+      <button class="close-button" id="chat-close">&times;</button>
+      <div class="chat-container">
+        <div class="chat-character">
+          <img
+            class="chat-character-image"
+            id="chat-character-image"
+            src="img/albinotomato.png"
+            alt="Albino Tomato"
+            style="display: none"
+          />
+          <div class="chat-character-fallback" id="chat-character-fallback">
+            🍅
+          </div>
+        </div>
+        <div class="chat-section">
+          <div class="chat-history" id="chat-history"></div>
+          <div class="chat-input-container">
+            <input
+              type="text"
+              class="chat-input"
+              id="chat-input"
+              placeholder="Type your message..."
+            />
+            <button class="send-button" id="send-button">Send</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Config -->
+    <script src="config.js"></script>
+
+    <!-- Core Components -->
+    <script src="js/Character.js"></script>
+    <script src="js/UIManager.js"></script>
+    <script src="js/ChatSystem.js"></script>
+    <script src="js/LLMService.js"></script>
+    <script src="js/GameManager.js"></script>
+
+    <script>
+      // Character.js - Character data and behavior
+      class Character {
+        constructor(id, name, imagePath, description, personality) {
+          this.id = id;
+          this.name = name;
+          this.imagePath = imagePath;
+          this.description = description;
+          this.personality = personality;
+          this.chatHistory = [];
+        }
+
+        getInfo() {
+          return this.description;
+        }
+
+        addToChatHistory(sender, message) {
+          this.chatHistory.push({ sender, message, timestamp: new Date() });
+        }
+
+        getChatHistory() {
+          return this.chatHistory;
+        }
+
+        clearChatHistory() {
+          this.chatHistory = [];
+        }
+
+        getPersonality() {
+          return this.personality;
+        }
+      }
+
+      // UIManager.js - Handles all UI interactions and popups
+      class UIManager {
+        constructor() {
+          this.overlay = document.getElementById("overlay");
+          this.menuPopup = document.getElementById("menu-popup");
+          this.infoPopup = document.getElementById("info-popup");
+          this.chatPopup = document.getElementById("chat-popup");
+        }
+
+        showOverlay() {
+          this.overlay.style.display = "block";
+        }
+
+        hideOverlay() {
+          this.overlay.style.display = "none";
+        }
+
+        showMenu() {
+          this.hideAllPopups();
+          this.showOverlay();
+          this.menuPopup.style.display = "block";
+        }
+
+        showInfo(content) {
+          this.hideAllPopups();
+          this.showOverlay();
+          document.getElementById("info-content").innerHTML = content;
+          this.infoPopup.style.display = "block";
+        }
+
+        showChat() {
+          this.hideAllPopups();
+          this.showOverlay();
+          this.chatPopup.style.display = "block";
+        }
+
+        hideAllPopups() {
+          this.menuPopup.style.display = "none";
+          this.infoPopup.style.display = "none";
+          this.chatPopup.style.display = "none";
+        }
+
+        hideAll() {
+          this.hideAllPopups();
+          this.hideOverlay();
+        }
+
+        setupEventListeners(gameManager) {
+          // Character click
+          document
+            .getElementById("character-container")
+            .addEventListener("click", () => {
+              gameManager.onCharacterClick();
+            });
+
+          // Menu buttons
+          document
+            .getElementById("info-button")
+            .addEventListener("click", () => {
+              gameManager.onInfoClick();
+            });
+
+          document
+            .getElementById("chat-button")
+            .addEventListener("click", () => {
+              gameManager.onChatClick();
+            });
+
+          // Close buttons
+          document
+            .getElementById("info-close")
+            .addEventListener("click", () => {
+              this.hideAll();
+            });
+
+          document
+            .getElementById("chat-close")
+            .addEventListener("click", () => {
+              this.hideAll();
+            });
+
+          // Overlay click
+          this.overlay.addEventListener("click", () => {
+            this.hideAll();
+          });
+
+          // Prevent popup clicks from closing
+          this.menuPopup.addEventListener("click", (e) => e.stopPropagation());
+          this.infoPopup.addEventListener("click", (e) => e.stopPropagation());
+          this.chatPopup.addEventListener("click", (e) => e.stopPropagation());
+        }
+      }
+
+      // ChatSystem.js - Manages chat interface and history
+      class ChatSystem {
+        constructor(character, llmService) {
+          this.character = character;
+          this.llmService = llmService;
+          this.chatHistory = document.getElementById("chat-history");
+          this.chatInput = document.getElementById("chat-input");
+          this.sendButton = document.getElementById("send-button");
+
+          this.setupEventListeners();
+        }
+
+        setupEventListeners() {
+          this.sendButton.addEventListener("click", () => {
+            this.sendMessage();
+          });
+
+          this.chatInput.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") {
+              this.sendMessage();
+            }
+          });
+        }
+
+        async sendMessage() {
+          const message = this.chatInput.value.trim();
+          if (!message) return;
+
+          // Disable input while processing
+          this.setInputEnabled(false);
+
+          // Add user message to history
+          this.addMessage("user", message);
+          this.character.addToChatHistory("user", message);
+
+          // Clear input
+          this.chatInput.value = "";
+
+          try {
+            // Get LLM response
+            const response = await this.llmService.getResponse(
+              message,
+              this.character.getChatHistory(),
+              this.character.getPersonality()
+            );
+
+            // Add character response to history
+            this.addMessage("character", response);
+            this.character.addToChatHistory("character", response);
+          } catch (error) {
+            console.error("LLM Error:", error);
+            this.addMessage(
+              "character",
+              "I'm having trouble thinking right now... could you try again?"
+            );
+          } finally {
+            this.setInputEnabled(true);
+          }
+        }
+
+        addMessage(sender, message) {
+          const messageDiv = document.createElement("div");
+          messageDiv.className = `chat-message ${sender}-message`;
+          messageDiv.textContent = message;
+          this.chatHistory.appendChild(messageDiv);
+          this.chatHistory.scrollTop = this.chatHistory.scrollHeight;
+        }
+
+        setInputEnabled(enabled) {
+          this.chatInput.disabled = !enabled;
+          this.sendButton.disabled = !enabled;
+          this.sendButton.textContent = enabled ? "Send" : "Thinking...";
+        }
+
+        clearChat() {
+          this.chatHistory.innerHTML = "";
+          this.character.clearChatHistory();
+        }
+      }
+
+      // LLMService.js - Handles LLM communication via OpenRouter
+      class LLMService {
+        constructor() {
+          this.apiEndpoint = "https://openrouter.ai/api/v1/chat/completions";
+          this.apiKey = window.CONFIG?.OPENROUTER_API_KEY;
+          this.model =
+            window.CONFIG?.MODEL || "deepseek/deepseek-r1-0528-qwen3-8b:free";
+          this.maxTokens = window.CONFIG?.MAX_TOKENS || 10000;
+          this.siteUrl =
+            window.CONFIG?.SITE_URL || "https://your-game-site.com";
+          this.siteTitle = window.CONFIG?.SITE_TITLE || "Albino Tomato Town";
+        }
+
+        async getResponse(userMessage, chatHistory, personality) {
+          if (!this.apiKey || this.apiKey === "API_KEY_HERE") {
+            console.warn("No valid API key found, using mock responses");
+            return this.getMockResponse(userMessage, personality);
+          }
+
+          try {
+            const prompt = this.buildPrompt(
+              userMessage,
+              chatHistory,
+              personality
+            );
+            const response = await this.callOpenRouter(prompt);
+            return response;
+          } catch (error) {
+            console.error("LLM API Error:", error);
+            // Fallback to mock response on error
+            return this.getMockResponse(userMessage, personality);
+          }
+        }
+
+        async callOpenRouter(messages) {
+          const response = await fetch(this.apiEndpoint, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${this.apiKey}`,
+              "Content-Type": "application/json",
+              "HTTP-Referer": this.siteUrl,
+              "X-Title": this.siteTitle,
+            },
+            body: JSON.stringify({
+              model: this.model,
+              messages: messages,
+              max_tokens: this.maxTokens,
+              temperature: 0.7,
+              top_p: 0.9,
+              frequency_penalty: 0.1,
+              presence_penalty: 0.1,
+            }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(
+              `OpenRouter API error: ${response.status} - ${
+                errorData.error?.message || "Unknown error"
+              }`
+            );
+          }
+
+          const data = await response.json();
+
+          if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+            throw new Error("Invalid response format from OpenRouter API");
+          }
+
+          return data.choices[0].message.content;
+        }
+
+        buildPrompt(userMessage, chatHistory, personality) {
+          const messages = [
+            {
+              role: "system",
+              content: `You are an Albino Tomato character in a whimsical garden town game. Your personality: ${personality}
+
+Key traits:
+- You are a wise, gentle albino tomato who has been growing in this garden for years
+- You speak thoughtfully about garden life and nature
+- You have a cheerful but contemplative demeanor
+- You sometimes reference your unique albino appearance and how it affects your perspective
+- Keep responses conversational and in-character
+- Respond in 1-3 sentences typically, staying engaging but concise
+- Show curiosity about the player and their world outside the garden`,
+            },
+          ];
+
+          // Add recent chat history (last 10 messages to stay within token limits)
+          const recentHistory = chatHistory.slice(-10);
+          for (const entry of recentHistory) {
+            messages.push({
+              role: entry.sender === "user" ? "user" : "assistant",
+              content: entry.message,
+            });
+          }
+
+          // Add current user message
+          messages.push({
+            role: "user",
+            content: userMessage,
+          });
+
+          return messages;
+        }
+
+        getMockResponse(userMessage, personality) {
+          return new Promise((resolve) => {
+            setTimeout(() => {
+              const responses = this.generateMockResponses(
+                userMessage,
+                personality
+              );
+              const response =
+                responses[Math.floor(Math.random() * responses.length)];
+              resolve(response);
+            }, 1000 + Math.random() * 2000);
+          });
+        }
+
+        generateMockResponses(userMessage, personality) {
+          const tomatoResponses = [
+            `As an albino tomato, I see the world a bit differently than my red cousins. You mentioned "${
+              userMessage.split(" ")[0]
+            }" - that's fascinating!`,
+            `I've been growing here for years, watching the seasons change. What you said about "${
+              userMessage.split(" ")[0]
+            }" reminds me of something...`,
+            `My pale skin lets me see things others might miss. Tell me more about what brought that thought to your mind?`,
+            `The garden has taught me patience and wisdom. Your words about "${
+              userMessage.split(" ")[0]
+            }" make me curious - what's your world like outside this garden?`,
+            `Being different has its advantages - I glow softly under moonlight, you know! But enough about me, what made you think of that?`,
+          ];
+
+          if (personality.includes("cheerful")) {
+            tomatoResponses.push(
+              `Oh my vines! That sounds wonderful! I love hearing about ${
+                userMessage.split(" ")[0]
+              } from visitors like you!`
+            );
+          }
+
+          if (personality.includes("wise")) {
+            tomatoResponses.push(
+              `In my seasons of growth, I've learned that ${
+                userMessage.split(" ")[0]
+              } often reveals deeper truths about life.`
+            );
+          }
+
+          return tomatoResponses;
+        }
+      }
+
+      // GameManager.js - Main game controller
+      class GameManager {
+        constructor() {
+          this.character = new Character(
+            "albino-tomato",
+            "Albino Tomato",
+            "img/albinotomato.png",
+            `<h2>🍅 Meet the Albino Tomato!</h2>
+                    <p>This rare and mysterious albino tomato has been growing in the garden for years. 
+                    Unlike its red cousins, this pale beauty has developed a unique personality and 
+                    wisdom from watching the seasons change.</p>
+                    <p>Local gardeners say it glows softly under moonlight and whispers ancient 
+                    plant secrets to those who listen carefully.</p>
+                    <p><strong>Special Traits:</strong> Moonlight sensitivity, Ancient wisdom, 
+                    Gentle nature</p>`,
+            "A wise and gentle albino tomato who speaks thoughtfully about garden life and nature. Cheerful but contemplative."
+          );
+
+          this.uiManager = new UIManager();
+          this.llmService = new LLMService();
+          this.chatSystem = new ChatSystem(this.character, this.llmService);
+
+          this.init();
+        }
+
+        init() {
+          this.setupImageLoading();
+          this.uiManager.setupEventListeners(this);
+        }
+
+        setupImageLoading() {
+          const mainImage = document.getElementById("character-image");
+          const chatImage = document.getElementById("chat-character-image");
+          const mainFallback = document.getElementById("character-fallback");
+          const chatFallback = document.getElementById(
+            "chat-character-fallback"
+          );
+
+          // Try to load the main image
+          mainImage.onload = () => {
+            mainImage.style.display = "block";
+            mainFallback.style.display = "none";
+            chatImage.style.display = "block";
+            chatFallback.style.display = "none";
+          };
+
+          mainImage.onerror = () => {
+            mainImage.style.display = "none";
+            mainFallback.style.display = "flex";
+            chatImage.style.display = "none";
+            chatFallback.style.display = "flex";
+          };
+        }
+
+        onCharacterClick() {
+          this.uiManager.showMenu();
+        }
+
+        onInfoClick() {
+          this.uiManager.showInfo(this.character.getInfo());
+        }
+
+        onChatClick() {
+          this.uiManager.showChat();
+        }
+      }
+
+      // Initialize the game
+      document.addEventListener("DOMContentLoaded", () => {
+        new GameManager();
+      });
+    </script>
+  </body>
+</html>
