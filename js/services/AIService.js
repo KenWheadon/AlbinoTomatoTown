@@ -1,8 +1,7 @@
 class AIService {
   constructor() {
-    this.apiUrl =
-      CONFIG.AI_API_URL || "https://openrouter.ai/api/v1/chat/completions";
-    this.apiKey = CONFIG.OPENROUTER_API_KEY; // Use the API key from config
+    this.apiUrl = CONFIG.AI_API_URL;
+    this.apiKey = CONFIG.OPENROUTER_API_KEY; // Will be null in production
     this.isAvailable = false;
     this.fallbackResponses = new Map();
     this.requestQueue = [];
@@ -12,6 +11,8 @@ class AIService {
     this.checkServiceAvailability();
 
     console.log("🤖 AI Service initialized");
+    console.log("🤖 API URL:", this.apiUrl);
+    console.log("🤖 Has API Key:", !!this.apiKey);
   }
 
   setupFallbackResponses() {
@@ -59,16 +60,20 @@ class AIService {
   }
 
   async checkServiceAvailability() {
-    if (!this.apiKey || !this.apiUrl) {
-      console.warn("🤖 AI API not configured, using fallback responses only");
-      this.isAvailable = false;
-      return;
+    // In development, check if we have an API key
+    if (CONFIG.IS_DEVELOPMENT) {
+      if (!this.apiKey || !this.apiUrl) {
+        console.warn("🤖 AI API not configured, using fallback responses only");
+        this.isAvailable = false;
+        return;
+      }
+      this.isAvailable = true;
+      console.log("🤖 AI Service configured for development");
+    } else {
+      // In production, assume the API endpoint is available
+      this.isAvailable = true;
+      console.log("🤖 AI Service configured for production (using Vercel API)");
     }
-
-    // For now, assume API is available if we have a key
-    // We'll handle failures gracefully in the actual requests
-    this.isAvailable = true;
-    console.log("🤖 AI Service configured with API key");
   }
 
   async generateResponse(characterKey, message, conversationHistory = []) {
@@ -170,7 +175,7 @@ class AIService {
     messages.push({ role: "user", content: message });
 
     const requestBody = {
-      model: CONFIG.MODEL, // Use the model from config
+      model: CONFIG.MODEL,
       messages: messages,
       max_tokens: CONFIG.MAX_TOKENS,
       temperature: 0.8,
@@ -181,16 +186,24 @@ class AIService {
       url: this.apiUrl,
       model: CONFIG.MODEL,
       messageCount: messages.length,
+      isProduction: !CONFIG.IS_DEVELOPMENT,
     });
+
+    // Different request headers for dev vs production
+    const headers = {
+      "Content-Type": "application/json",
+    };
+
+    // In development, add authorization header
+    if (CONFIG.IS_DEVELOPMENT && this.apiKey) {
+      headers["Authorization"] = `Bearer ${this.apiKey}`;
+      headers["HTTP-Referer"] = CONFIG.SITE_URL;
+      headers["X-Title"] = CONFIG.SITE_TITLE;
+    }
 
     const response = await fetch(this.apiUrl, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${this.apiKey}`,
-        "HTTP-Referer": CONFIG.SITE_URL,
-        "X-Title": CONFIG.SITE_TITLE,
-      },
+      headers: headers,
       body: JSON.stringify(requestBody),
     });
 
@@ -348,6 +361,8 @@ class AIService {
         (total, responses) => total + responses.length,
         0
       ),
+      environment: CONFIG.IS_DEVELOPMENT ? "development" : "production",
+      apiUrl: this.apiUrl,
     };
   }
 }
