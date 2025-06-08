@@ -149,8 +149,9 @@ class Renderer {
         ease: "power2.out",
       });
 
-      // Add subtle glow effect
-      element.style.filter = "drop-shadow(0 0 10px rgba(255,255,255,0.7))";
+      // Remove the drop-shadow filter that creates the border
+      // Replace with a subtle glow without hard edges
+      element.style.filter = "brightness(1.2) saturate(1.1)";
     });
 
     element.addEventListener("mouseleave", () => {

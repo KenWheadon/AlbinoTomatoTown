@@ -243,6 +243,9 @@ class LocationNavigator {
       return;
     }
 
+    // CLEAR any open location previews
+    this.hideLocationPreview();
+
     this.isNavigating = true;
 
     // Visual feedback

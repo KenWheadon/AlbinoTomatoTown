@@ -369,10 +369,10 @@ class AchievementManager {
         ? `<div class="achievement-unlock-time">Unlocked: ${achievement.unlockedAt.toLocaleDateString()}</div>`
         : "";
 
-    // Hide description for locked achievements, show hint instead
+    // Show description only for unlocked achievements
     const descriptionHtml = achievement.isUnlocked
       ? `<div class="achievement-description">${achievement.description}</div>`
-      : `<div class="achievement-description">???</div>`;
+      : ""; // Remove the ??? placeholder entirely
 
     element.innerHTML = `
             <div class="achievement-icon">
@@ -414,6 +414,24 @@ class AchievementManager {
     // This method can be used for additional logic when achievements are unlocked
     // Currently the unlocking is handled directly in unlockAchievement()
     console.log(`🏆 Achievement unlock event received: ${achievementId}`);
+  }
+
+  // Sync achievements from game state on load
+  syncFromGameState(unlockedSet) {
+    console.log("🏆 Syncing achievements from game state");
+    this.unlockedAchievements = new Set(unlockedSet);
+
+    // Update achievement objects
+    this.achievements.forEach((achievement, id) => {
+      if (this.unlockedAchievements.has(id)) {
+        achievement.isUnlocked = true;
+        // Note: We don't have unlockedAt time from save, but that's ok
+      }
+    });
+
+    this.updateProgress();
+    this.updateButtonProgress();
+    console.log("🏆 Achievement sync complete");
   }
 
   // Get achievement statistics

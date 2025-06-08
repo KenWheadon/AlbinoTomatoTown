@@ -9,16 +9,34 @@ class GameEngine {
     this.achievementManager = new AchievementManager(this);
   }
 
-  start() {
+  async start() {
     console.log("Starting Albino Tomato Town...");
-    this.loadLocation(this.currentLocation);
+
+    // Try to load saved game first
+    const gameLoaded = this.gameState.load();
+
+    if (gameLoaded) {
+      // Load the saved location
+      this.currentLocation = this.gameState.currentLocation;
+      console.log(`Loading saved location: ${this.currentLocation}`);
+
+      // Sync achievements with the achievement manager
+      this.achievementManager.syncFromGameState(
+        this.gameState.unlockedAchievements
+      );
+    } else {
+      // Start new game
+      this.currentLocation = TOWN_CENTER;
+    }
+
+    await this.loadLocation(this.currentLocation);
     this.gameLoop();
   }
 
-  loadLocation(locationKey) {
+  async loadLocation(locationKey) {
     this.currentLocation = locationKey;
     this.gameState.visitLocation(locationKey);
-    this.renderer.renderLocation(locations[locationKey]);
+    await this.renderer.renderLocation(locations[locationKey]);
     this.locationNavigator.renderNavigation(locationKey);
   }
 

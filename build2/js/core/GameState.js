@@ -145,6 +145,10 @@ class GameState {
 
       localStorage.setItem(CONFIG.SAVE_KEY, JSON.stringify(saveData));
       console.log("💾 Game saved");
+      console.log(
+        "💾 Saved achievements:",
+        Array.from(this.unlockedAchievements)
+      );
       GameEvents.emit(GAME_EVENTS.GAME_SAVED);
     } catch (error) {
       console.error("Failed to save game:", error);
@@ -162,7 +166,7 @@ class GameState {
 
       const parsed = JSON.parse(saveData);
 
-      this.currentLocation = parsed.currentLocation || GARDEN;
+      this.currentLocation = parsed.currentLocation || TOWN_CENTER;
       this.visitedLocations = new Set(parsed.visitedLocations || []);
       this.conversationHistories = new Map(
         Object.entries(parsed.conversationHistories || {})
@@ -176,6 +180,11 @@ class GameState {
       };
 
       console.log("📂 Game loaded");
+      console.log(
+        "📂 Loaded achievements:",
+        Array.from(this.unlockedAchievements)
+      );
+
       GameEvents.emit(GAME_EVENTS.GAME_LOADED);
       return true;
     } catch (error) {
@@ -186,7 +195,7 @@ class GameState {
 
   // Reset game state
   reset() {
-    this.currentLocation = GARDEN;
+    this.currentLocation = TOWN_CENTER;
     this.visitedLocations.clear();
     this.conversationHistories.clear();
     this.unlockedAchievements.clear();
