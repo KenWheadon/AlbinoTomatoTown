@@ -289,13 +289,22 @@ class ConversationManager {
   }
 
   async startConversation(characterKey, character) {
+    console.log(
+      `💬 START CONVERSATION - Current: ${this.currentCharacter}, New: ${characterKey}, Active: ${this.isConversationActive}`
+    );
+
     if (this.isConversationActive) {
+      console.log(
+        `💬 Ending existing conversation with ${this.currentCharacter}`
+      );
       this.endConversation();
     }
 
     this.currentCharacter = characterKey;
     this.isConversationActive = true;
     this.messageHistory = [];
+
+    console.log(`💬 Setting up new conversation with ${characterKey}`);
 
     // Update UI
     this.updateCharacterInfo(character);
@@ -308,9 +317,13 @@ class ConversationManager {
     // Get conversation history
     const history =
       this.gameEngine.gameState.getConversationHistory(characterKey);
+    console.log(
+      `💬 Found ${history.length} previous messages with ${characterKey}`
+    );
 
     // Generate greeting
     const greeting = await this.generateGreeting(character, history);
+    console.log(`💬 Generated greeting: "${greeting}"`);
     this.addMessage("character", greeting);
 
     // Focus input
@@ -322,7 +335,7 @@ class ConversationManager {
       character,
     });
 
-    console.log(`💬 Started conversation with ${characterKey}`);
+    console.log(`💬 Conversation with ${characterKey} fully initialized`);
   }
 
   async generateGreeting(character, history) {
@@ -361,8 +374,13 @@ class ConversationManager {
     const message = input.value.trim();
 
     if (!message || this.isWaitingForResponse) {
+      console.log(
+        `💬 SEND MESSAGE BLOCKED - Message: "${message}", Waiting: ${this.isWaitingForResponse}`
+      );
       return;
     }
+
+    console.log(`💬 SENDING MESSAGE: "${message}" to ${this.currentCharacter}`);
 
     // Clear input and disable it
     input.value = "";
@@ -381,13 +399,16 @@ class ConversationManager {
       const history = this.gameEngine.gameState.getConversationHistory(
         this.currentCharacter
       );
+      console.log(`💬 Using ${history.length} previous messages for context`);
 
       // Generate AI response
+      console.log(`💬 Requesting AI response from ${this.currentCharacter}`);
       const response = await this.aiService.generateResponse(
         this.currentCharacter,
         message,
         history
       );
+      console.log(`💬 AI RESPONSE RECEIVED: "${response}"`);
 
       // Hide typing indicator
       this.hideTypingIndicator();
@@ -401,11 +422,12 @@ class ConversationManager {
         message,
         response
       );
+      console.log(`💬 Conversation saved to game state`);
 
       // Check for achievement triggers
       this.checkAchievementTriggers(message, response);
     } catch (error) {
-      console.error("Error generating response:", error);
+      console.error("💬 ERROR generating response:", error);
       this.hideTypingIndicator();
       this.addMessage(
         "character",
@@ -418,6 +440,8 @@ class ConversationManager {
     this.conversationPanel.querySelector(".send-button").disabled = false;
     this.isWaitingForResponse = false;
     input.focus();
+
+    console.log(`💬 Message send cycle completed`);
   }
 
   addMessage(sender, text) {
@@ -466,26 +490,20 @@ class ConversationManager {
   }
 
   checkAchievementTriggers(playerMessage, characterResponse) {
-    // Check if the response contains achievement trigger words
-    const triggeredAchievements = this.aiService.checkAchievementTriggers(
-      this.currentCharacter,
-      characterResponse
-    );
+    console.log(`🏆 CHECKING ACHIEVEMENTS for ${this.currentCharacter}`);
+    console.log(`🏆 Player message: "${playerMessage}"`);
+    console.log(`🏆 Character response: "${characterResponse}"`);
 
-    // Also check player message for secrets they might have uncovered
-    const playerTriggeredAchievements = this.aiService.checkAchievementTriggers(
-      this.currentCharacter,
-      playerMessage
-    );
-
-    const allTriggered = [
-      ...triggeredAchievements,
-      ...playerTriggeredAchievements,
-    ];
-
-    allTriggered.forEach((achievementId) => {
-      this.gameEngine.gameState.unlockAchievement(achievementId);
-    });
+    // Check if the response contains achievement trigger words using AchievementManager
+    if (this.gameEngine.achievementManager) {
+      this.gameEngine.achievementManager.checkTriggers(
+        this.currentCharacter,
+        playerMessage,
+        characterResponse
+      );
+    } else {
+      console.warn("🏆 AchievementManager not available");
+    }
   }
 
   updateCharacterInfo(character) {

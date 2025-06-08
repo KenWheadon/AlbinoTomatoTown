@@ -4,7 +4,7 @@ const achievements = {
     description: "What are you - a cop or something?",
     hint: "Ask Albino Tomato about his criminal past...",
     characterId: ALBINO_TOMATO,
-    triggerKeywords: ["GRILLED_CHEESE"],
+    triggerKeywords: ["grilled_cheese"], // Single entry - normalization handles all cases
     isUnlocked: false,
   },
   [GALS_BEST_FRIEND]: {
@@ -12,7 +12,7 @@ const achievements = {
     description: "What gal doesn't like a friendly pickle?",
     hint: "Get Cucumber Gal to talk about her dog Pickle...",
     characterId: CUCUMBER_GAL,
-    triggerKeywords: ["PICKLE_PERFECT"],
+    triggerKeywords: ["pickle_perfect"],
     isUnlocked: false,
   },
   [THE_COLOR_OF_ENVY]: {
@@ -21,7 +21,7 @@ const achievements = {
       "Also the color of money, which Cucumber Gal is making more of as well.",
     hint: "Get Green Pepper Gal to admit her true feelings about Cucumber Gal...",
     characterId: GREEN_PEPPER_GAL,
-    triggerKeywords: ["GREEN_WITH_ENVY"],
+    triggerKeywords: ["green_with_envy"],
     isUnlocked: false,
   },
   [PUMPKIN_PALS]: {
@@ -29,7 +29,7 @@ const achievements = {
     description: "Helping people never goes out of style.",
     hint: "Help Pumpkin Pete with his problem...",
     characterId: PUMPKIN_PETE,
-    triggerKeywords: ["PUMPKIN_SPICE"],
+    triggerKeywords: ["pumpkin_spice"],
     isUnlocked: false,
   },
 };

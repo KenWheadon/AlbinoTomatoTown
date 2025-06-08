@@ -335,29 +335,64 @@ class AchievementManager {
       this.handleAchievementUnlock(achievementId);
     });
 
-    // Keyboard shortcut to open achievements
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "A" && e.ctrlKey) {
-        e.preventDefault();
-        this.showAchievementPanel();
-      }
-    });
+    // Keyboard shortcut to open achievements (disabled for now, but ready)
+    // document.addEventListener("keydown", (e) => {
+    //   if (e.key === "A" && e.ctrlKey) {
+    //     e.preventDefault();
+    //     this.showAchievementPanel();
+    //   }
+    // });
   }
 
   checkTriggers(characterKey, message, response) {
+    console.log(`🏆 AchievementManager.checkTriggers called`);
+    console.log(`🏆 Character: ${characterKey}`);
+    console.log(`🏆 Message: "${message}"`);
+    console.log(`🏆 Response: "${response}"`);
+
     const characterAchievements = Array.from(this.achievements.values()).filter(
-      (achievement) =>
-        achievement.characterId === characterKey && !achievement.isUnlocked
+      (achievement) => {
+        console.log(
+          `🏆 Checking achievement ${achievement.id}: characterId=${achievement.characterId}, target=${characterKey}`
+        );
+        return (
+          achievement.characterId === characterKey && !achievement.isUnlocked
+        );
+      }
+    );
+
+    console.log(
+      `🏆 Found ${characterAchievements.length} possible achievements for ${characterKey}`
     );
 
     characterAchievements.forEach((achievement) => {
-      // Check if the character's response contains the trigger keyword
-      const responseHasTrigger = achievement.triggerKeywords.some((keyword) =>
-        response.toUpperCase().includes(keyword.toUpperCase())
+      console.log(`🏆 Checking achievement: ${achievement.id}`);
+      console.log(
+        `🏆 Trigger keywords: ${JSON.stringify(achievement.triggerKeywords)}`
       );
 
+      // Normalize the response text: lowercase and replace underscores with spaces
+      const normalizedResponse = response.toLowerCase().replace(/_/g, " ");
+      console.log(`🏆 Normalized response: "${normalizedResponse}"`);
+
+      // Check if the character's response contains the trigger keyword
+      const responseHasTrigger = achievement.triggerKeywords.some((keyword) => {
+        // Normalize the keyword the same way
+        const normalizedKeyword = keyword.toLowerCase().replace(/_/g, " ");
+        const found = normalizedResponse.includes(normalizedKeyword);
+        console.log(
+          `🏆 Checking normalized keyword "${normalizedKeyword}" in response: ${found}`
+        );
+        return found;
+      });
+
       if (responseHasTrigger) {
+        console.log(
+          `🏆 TRIGGER FOUND! Unlocking achievement: ${achievement.id}`
+        );
         this.unlockAchievement(achievement.id);
+      } else {
+        console.log(`🏆 No trigger found for ${achievement.id}`);
       }
     });
   }
@@ -415,11 +450,13 @@ class AchievementManager {
 
     document.body.appendChild(notification);
 
-    // Play sound
-    this.gameEngine.renderer.assetManager.playSound(
-      "effects/achievement.mp3",
-      0.6
-    );
+    // Play sound (if available)
+    if (this.gameEngine.renderer && this.gameEngine.renderer.assetManager) {
+      this.gameEngine.renderer.assetManager.playSound(
+        "effects/achievement.mp3",
+        0.6
+      );
+    }
 
     // Animate in
     gsap.fromTo(
@@ -578,6 +615,13 @@ class AchievementManager {
     if (progressText) {
       progressText.textContent = `${unlocked} / ${total}`;
     }
+  }
+
+  // Handle achievement unlock event
+  handleAchievementUnlock(achievementId) {
+    // This method can be used for additional logic when achievements are unlocked
+    // Currently the unlocking is handled directly in unlockAchievement()
+    console.log(`🏆 Achievement unlock event received: ${achievementId}`);
   }
 
   // Get achievement statistics
