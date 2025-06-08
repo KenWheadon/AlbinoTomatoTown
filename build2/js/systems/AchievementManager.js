@@ -4,11 +4,14 @@ class AchievementManager {
     this.achievements = new Map();
     this.unlockedAchievements = new Set();
     this.achievementPanel = null;
+    this.achievementButton = null;
     this.notificationQueue = [];
     this.isShowingNotification = false;
+    this.hasNewAchievements = false;
 
     this.loadAchievements();
     this.createAchievementUI();
+    this.createAchievementButton();
     this.setupEventListeners();
 
     console.log("🏆 Achievement manager initialized");
@@ -26,6 +29,46 @@ class AchievementManager {
     });
 
     console.log(`🏆 Loaded ${this.achievements.size} achievements`);
+  }
+
+  createAchievementButton() {
+    // Create floating achievements button
+    this.achievementButton = document.createElement("button");
+    this.achievementButton.className = "achievements-trigger";
+    this.achievementButton.innerHTML = "🏆";
+    this.achievementButton.title = "View Achievements (A)";
+    this.achievementButton.setAttribute("data-progress", "0/4");
+
+    document.body.appendChild(this.achievementButton);
+
+    // Add click listener
+    this.achievementButton.addEventListener("click", () => {
+      this.showAchievementPanel();
+    });
+
+    // Update progress indicator
+    this.updateButtonProgress();
+  }
+
+  updateButtonProgress() {
+    if (this.achievementButton) {
+      const unlocked = this.unlockedAchievements.size;
+      const total = this.achievements.size;
+      this.achievementButton.setAttribute(
+        "data-progress",
+        `${unlocked}/${total}`
+      );
+
+      // Add pulse animation for new achievements
+      if (this.hasNewAchievements) {
+        this.achievementButton.classList.add("has-new");
+        // Remove the animation after a few seconds
+        setTimeout(() => {
+          this.achievementButton.classList.remove("has-new");
+          this.hasNewAchievements = false;
+        }, 5000);
+      }
+    }
   }
 
   createAchievementUI() {
@@ -59,23 +102,24 @@ class AchievementManager {
   styleAchievementPanel() {
     const style = document.createElement("style");
     style.textContent = `
-            .achievement-panel {
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                width: 600px;
-                max-width: 90vw;
-                max-height: 80vh;
-                background: rgba(255,255,255,0.95);
-                border-radius: 16px;
-                box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-                z-index: 1500;
-                backdrop-filter: blur(10px);
-                border: 2px solid rgba(74,93,58,0.3);
-                display: none;
-                flex-direction: column;
-            }
+              .achievement-panel {
+                  position: fixed;
+                  top: 50%;
+                  left: 50%;
+                  transform: translate(-50%, -50%);
+                  width: 600px;
+                  max-width: 90vw;
+                  max-height: 90vh;  /* Changed from 80vh to 90vh */
+                  height: auto;      /* Add this line */
+                  background: rgba(255,255,255,0.95);
+                  border-radius: 16px;
+                  box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+                  z-index: 1500;
+                  backdrop-filter: blur(10px);
+                  border: 2px solid rgba(74,93,58,0.3);
+                  display: none;
+                  flex-direction: column;
+              }
             
             .achievement-header {
                 padding: 20px;
@@ -164,7 +208,8 @@ class AchievementManager {
                 flex: 1;
                 overflow-y: auto;
                 padding: 20px;
-                max-height: 400px;
+                max-height: none;
+                min-height: 0;
             }
             
             .achievement-item {
@@ -251,6 +296,11 @@ class AchievementManager {
                 display: none;
             }
             
+            .achievement-item.locked .achievement-description {
+                color: #999 !important;
+                font-style: italic;
+            }
+            
             .achievement-unlock-time {
                 font-size: 11px;
                 color: #4CAF50;
@@ -335,13 +385,15 @@ class AchievementManager {
       this.handleAchievementUnlock(achievementId);
     });
 
-    // Keyboard shortcut to open achievements (disabled for now, but ready)
-    // document.addEventListener("keydown", (e) => {
-    //   if (e.key === "A" && e.ctrlKey) {
-    //     e.preventDefault();
-    //     this.showAchievementPanel();
-    //   }
-    // });
+    // Keyboard shortcut to open achievements
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "a" || e.key === "A") {
+        if (!this.gameEngine.conversationManager.isConversationActive) {
+          e.preventDefault();
+          this.showAchievementPanel();
+        }
+      }
+    });
   }
 
   checkTriggers(characterKey, message, response) {
@@ -407,6 +459,7 @@ class AchievementManager {
     achievement.isUnlocked = true;
     achievement.unlockedAt = new Date();
     this.unlockedAchievements.add(achievementId);
+    this.hasNewAchievements = true;
 
     // Update game state
     this.gameEngine.gameState.unlockAchievement(achievementId);
@@ -416,6 +469,7 @@ class AchievementManager {
 
     // Update progress
     this.updateProgress();
+    this.updateButtonProgress();
 
     console.log(`🏆 Achievement unlocked: ${achievement.title}`);
     return true;
@@ -580,15 +634,18 @@ class AchievementManager {
         ? `<div class="achievement-unlock-time">Unlocked: ${achievement.unlockedAt.toLocaleDateString()}</div>`
         : "";
 
+    // Hide description for locked achievements, show hint instead
+    const descriptionHtml = achievement.isUnlocked
+      ? `<div class="achievement-description">${achievement.description}</div>`
+      : `<div class="achievement-description">???</div>`;
+
     element.innerHTML = `
             <div class="achievement-icon">
                 ${achievement.isUnlocked ? "🏆" : "🔒"}
             </div>
             <div class="achievement-content">
                 <div class="achievement-title">${achievement.title}</div>
-                <div class="achievement-description">${
-                  achievement.description
-                }</div>
+                ${descriptionHtml}
                 <div class="achievement-hint">${
                   achievement.hint ||
                   "Keep exploring to unlock this achievement!"
@@ -659,6 +716,7 @@ class AchievementManager {
     });
     this.unlockedAchievements.clear();
     this.updateProgress();
+    this.updateButtonProgress();
     console.log("🏆 All achievements reset");
   }
 }
