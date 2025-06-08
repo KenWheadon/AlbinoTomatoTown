@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Albino Tomato Town</title>
+    <link rel="stylesheet" href="css/main.css" />
+    <link rel="stylesheet" href="css/ui.css" />
+    <link rel="stylesheet" href="css/animations.css" />
+  </head>
+  <body>
+    <div id="game-container"></div>
+    <div id="ui-container"></div>
+
+    <!-- GSAP from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <!-- IMPORTANT: Load in this exact order! -->
+    <!-- 1. Configuration first -->
+    <script src="js/utils/config.js"></script>
+
+    <!-- 2. Constants before data files -->
+    <script src="js/data/constants.js"></script>
+
+    <!-- 3. Data files (now constants are available) -->
+    <script src="js/data/locations.js"></script>
+    <script src="js/data/characters.js"></script>
+    <script src="js/data/items.js"></script>
+    <script src="js/data/achievements.js"></script>
+
+    <!-- 4. Core utilities -->
+    <script src="js/core/EventEmitter.js"></script>
+    <script src="js/utils/helpers.js"></script>
+
+    <!-- 5. Core systems -->
+    <script src="js/core/GameState.js"></script>
+    <script src="js/services/AssetManager.js"></script>
+    <script src="js/services/AIService.js"></script>
+
+    <!-- 6. Game systems -->
+    <script src="js/systems/Renderer.js"></script>
+    <script src="js/systems/InteractionHandler.js"></script>
+    <script src="js/systems/ConversationManager.js"></script>
+    <script src="js/systems/LocationNavigator.js"></script>
+    <script src="js/systems/AchievementManager.js"></script>
+
+    <!-- 7. Main game engine -->
+    <script src="js/core/GameEngine.js"></script>
+
+    <!-- 8. Start the game -->
+    <script src="js/main.js"></script>
+  </body>
+</html>
