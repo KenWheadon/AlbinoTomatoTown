@@ -19,8 +19,31 @@
     <!-- GSAP from CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 
+    <!-- LOCAL CONFIG: Only load in development (ignored in production if file doesn't exist) -->
+    <script>
+      // Try to load local config if we're in development
+      if (
+        window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1" ||
+        window.location.hostname.includes("localhost")
+      ) {
+        // Dynamically load local config
+        const localConfigScript = document.createElement("script");
+        localConfigScript.src = "js/utils/local.config.js";
+        localConfigScript.onerror = function () {
+          console.warn(
+            "⚠️ local.config.js not found - API key may not be available for development"
+          );
+          console.log(
+            "💡 Create js/utils/local.config.js with your API key for local development"
+          );
+        };
+        document.head.appendChild(localConfigScript);
+      }
+    </script>
+
     <!-- IMPORTANT: Load in this exact order! -->
-    <!-- 1. Configuration first -->
+    <!-- 1. Configuration (after local config attempt) -->
     <script src="js/utils/config.js"></script>
 
     <!-- 2. Constants before data files -->

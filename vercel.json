@@ -1,0 +1,13 @@
+{
+  "functions": {
+    "api/config.js": {
+      "runtime": "@vercel/node@18"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/js/utils/config.js",
+      "destination": "/api/config"
+    }
+  ]
+}
