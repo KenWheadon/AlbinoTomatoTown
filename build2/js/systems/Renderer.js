@@ -102,12 +102,17 @@ class Renderer {
     element.dataset.key = key;
     element.title = data.description;
 
+    // Get scale factor (default to 1 if not specified)
+    const scale = data.scale || 1;
+    const baseSize = 64;
+    const scaledSize = baseSize * scale;
+
     // Position element
     element.style.position = "absolute";
     element.style.left = data.X + "px";
     element.style.top = data.Y + "px";
-    element.style.width = "64px";
-    element.style.height = "64px";
+    element.style.width = scaledSize + "px";
+    element.style.height = scaledSize + "px";
     element.style.cursor = "pointer";
     element.style.transition = "transform 0.2s ease";
 
@@ -209,6 +214,7 @@ class Renderer {
   }
 
   // Show floating text (for item descriptions, etc.)
+  // Modified to support duration = 0 for no auto-close
   showFloatingText(text, x, y, duration = 3000) {
     const textElement = document.createElement("div");
     textElement.className = "floating-text";
@@ -221,14 +227,36 @@ class Renderer {
     textElement.style.padding = "8px 12px";
     textElement.style.borderRadius = "8px";
     textElement.style.fontSize = "14px";
-    textElement.style.pointerEvents = "none";
+    textElement.style.pointerEvents = duration === 0 ? "auto" : "none"; // Allow clicks if permanent
     textElement.style.zIndex = "1000";
     textElement.style.maxWidth = "200px";
     textElement.style.wordWrap = "break-word";
+    textElement.style.cursor = duration === 0 ? "pointer" : "default";
+
+    // Add close hint for permanent tooltips
+    if (duration === 0) {
+      const closeHint = document.createElement("div");
+      closeHint.textContent = "Click to close";
+      closeHint.style.fontSize = "10px";
+      closeHint.style.opacity = "0.7";
+      closeHint.style.marginTop = "4px";
+      closeHint.style.textAlign = "center";
+      closeHint.style.fontStyle = "italic";
+      textElement.appendChild(closeHint);
+    }
 
     this.container.appendChild(textElement);
 
-    // Animate in and out
+    // Position adjustment if off-screen
+    const rect = textElement.getBoundingClientRect();
+    if (rect.right > window.innerWidth) {
+      textElement.style.left = x - rect.width + "px";
+    }
+    if (rect.bottom > window.innerHeight) {
+      textElement.style.top = y - rect.height - 10 + "px";
+    }
+
+    // Animate in
     gsap.fromTo(
       textElement,
       {
@@ -243,20 +271,24 @@ class Renderer {
       }
     );
 
-    // Remove after duration
-    setTimeout(() => {
-      gsap.to(textElement, {
-        opacity: 0,
-        y: -20,
-        duration: 0.3,
-        ease: "power2.in",
-        onComplete: () => {
-          if (textElement.parentNode) {
-            textElement.parentNode.removeChild(textElement);
-          }
-        },
-      });
-    }, duration);
+    // Remove after duration only if duration > 0
+    if (duration > 0) {
+      setTimeout(() => {
+        gsap.to(textElement, {
+          opacity: 0,
+          y: -20,
+          duration: 0.3,
+          ease: "power2.in",
+          onComplete: () => {
+            if (textElement.parentNode) {
+              textElement.parentNode.removeChild(textElement);
+            }
+          },
+        });
+      }, duration);
+    }
+
+    return textElement; // Return element for manual management
   }
 
   // Highlight an interactable (for achievements, hints, etc.)

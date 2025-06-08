@@ -2,6 +2,7 @@ class InteractionHandler {
   constructor(gameEngine) {
     this.gameEngine = gameEngine;
     this.isInteractionBlocked = false;
+    this.activeTooltips = new Map(); // Track active tooltips
     this.setupEventListeners();
 
     console.log("🖱️ Interaction handler initialized");
@@ -27,13 +28,20 @@ class InteractionHandler {
   }
 
   handleClick(event) {
+    // Check if clicking on a tooltip to close it
+    if (event.target.closest(".floating-text")) {
+      const tooltip = event.target.closest(".floating-text");
+      this.closeTooltip(tooltip);
+      return;
+    }
+
     if (this.isInteractionBlocked) {
       return;
     }
 
     const interactable = event.target.closest(".interactable");
     if (!interactable) {
-      // Clicked on empty space - close any open panels
+      // Clicked on empty space - close any open panels but NOT tooltips
       GameEvents.emit("ui_click_outside");
       return;
     }
@@ -66,7 +74,7 @@ class InteractionHandler {
     const type = interactable.dataset.type;
     const key = interactable.dataset.key;
 
-    // Right-click shows detailed description
+    // Right-click shows detailed description (toggle)
     this.showDetailedDescription(key, type, event.clientX, event.clientY);
   }
 
@@ -185,6 +193,15 @@ class InteractionHandler {
       return;
     }
 
+    // Check if this item already has a tooltip open
+    const tooltipKey = `item_${itemKey}`;
+    if (this.activeTooltips.has(tooltipKey)) {
+      // Close existing tooltip
+      const existingTooltip = this.activeTooltips.get(tooltipKey);
+      this.closeTooltip(existingTooltip);
+      return;
+    }
+
     // Block rapid clicking
     this.blockInteractions(200);
 
@@ -193,8 +210,14 @@ class InteractionHandler {
     const x = rect.left + rect.width / 2;
     const y = rect.top - 10;
 
-    // Show item description
-    this.gameEngine.renderer.showFloatingText(item.description, x, y, 4000);
+    // Show item description as toggle
+    const tooltip = this.gameEngine.renderer.showFloatingText(
+      item.description,
+      x,
+      y,
+      0
+    ); // 0 duration = no auto-close
+    this.activeTooltips.set(tooltipKey, tooltip);
 
     // Emit examination event
     GameEvents.emit(GAME_EVENTS.ITEM_EXAMINED, {
@@ -215,6 +238,30 @@ class InteractionHandler {
     console.log(`🔍 Examined item: ${itemKey}`);
   }
 
+  closeTooltip(tooltip) {
+    if (!tooltip || !tooltip.parentNode) return;
+
+    // Find and remove from active tooltips
+    for (const [key, activeTooltip] of this.activeTooltips.entries()) {
+      if (activeTooltip === tooltip) {
+        this.activeTooltips.delete(key);
+        break;
+      }
+    }
+
+    gsap.to(tooltip, {
+      opacity: 0,
+      y: -20,
+      duration: 0.3,
+      ease: "power2.in",
+      onComplete: () => {
+        if (tooltip.parentNode) {
+          tooltip.parentNode.removeChild(tooltip);
+        }
+      },
+    });
+  }
+
   showDetailedDescription(key, type, x, y) {
     let data;
     if (type === "character") {
@@ -225,12 +272,21 @@ class InteractionHandler {
 
     if (!data) return;
 
+    // Check if this detailed tooltip already exists
+    const tooltipKey = `detailed_${type}_${key}`;
+    if (this.activeTooltips.has(tooltipKey)) {
+      const existingTooltip = this.activeTooltips.get(tooltipKey);
+      this.closeTooltip(existingTooltip);
+      return;
+    }
+
     // Create detailed tooltip
     const tooltip = document.createElement("div");
-    tooltip.className = "detailed-tooltip";
+    tooltip.className = "detailed-tooltip floating-text"; // Add floating-text class for click handling
     tooltip.innerHTML = `
             <div class="tooltip-header">${this.formatName(key)}</div>
             <div class="tooltip-description">${data.description}</div>
+            <div class="tooltip-close-hint">Click to close</div>
         `;
 
     tooltip.style.position = "fixed";
@@ -243,7 +299,17 @@ class InteractionHandler {
     tooltip.style.maxWidth = "250px";
     tooltip.style.fontSize = "12px";
     tooltip.style.zIndex = "10000";
-    tooltip.style.pointerEvents = "none";
+    tooltip.style.cursor = "pointer";
+
+    // Add close hint styling
+    const closeHint = tooltip.querySelector(".tooltip-close-hint");
+    if (closeHint) {
+      closeHint.style.fontSize = "10px";
+      closeHint.style.opacity = "0.7";
+      closeHint.style.marginTop = "6px";
+      closeHint.style.textAlign = "center";
+      closeHint.style.fontStyle = "italic";
+    }
 
     document.body.appendChild(tooltip);
 
@@ -256,16 +322,8 @@ class InteractionHandler {
       tooltip.style.top = y - rect.height - 10 + "px";
     }
 
-    // Auto-remove after 5 seconds
-    setTimeout(() => {
-      if (tooltip.parentNode) {
-        gsap.to(tooltip, {
-          opacity: 0,
-          duration: 0.3,
-          onComplete: () => tooltip.remove(),
-        });
-      }
-    }, 5000);
+    // Store in active tooltips
+    this.activeTooltips.set(tooltipKey, tooltip);
 
     // Fade in
     gsap.fromTo(
@@ -374,5 +432,12 @@ class InteractionHandler {
   // Enable/disable interactions (for conversation mode, etc.)
   setInteractionsEnabled(enabled) {
     this.isInteractionBlocked = !enabled;
+  }
+
+  // Close all active tooltips
+  closeAllTooltips() {
+    for (const [key, tooltip] of this.activeTooltips.entries()) {
+      this.closeTooltip(tooltip);
+    }
   }
 }

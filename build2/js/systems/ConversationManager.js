@@ -255,7 +255,7 @@ class ConversationManager {
   }
 
   setupEventListeners() {
-    // Close button
+    // Close button - ONLY way to close conversation
     this.conversationPanel
       .querySelector(".close-conversation")
       .addEventListener("click", () => {
@@ -279,17 +279,12 @@ class ConversationManager {
         }
       });
 
-    // Escape key to close
-    GameEvents.on("ui_escape_pressed", () => {
-      if (this.isConversationActive) {
-        this.endConversation();
-      }
-    });
+    // REMOVED: Escape key to close - now only X button closes
+    // REMOVED: Click outside to close - now only X button closes
 
-    // Click outside to close
-    GameEvents.on("ui_click_outside", () => {
-      // Don't close on outside click during conversation
-      // This prevents accidental closure
+    // Stop propagation on conversation panel clicks to prevent outside clicks
+    this.conversationPanel.addEventListener("click", (e) => {
+      e.stopPropagation();
     });
   }
 
