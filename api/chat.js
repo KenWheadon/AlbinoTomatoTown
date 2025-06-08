@@ -1,23 +1,36 @@
-// api/chat.js - Place this file in an 'api' folder at your project root
+// api/chat.js - Vercel serverless function
 export default async function handler(req, res) {
-  // Enable CORS for your domain
+  // Set CORS headers
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
   // Handle preflight requests
   if (req.method === "OPTIONS") {
+    console.log("🌐 CORS preflight request");
     res.status(200).end();
     return;
   }
 
   // Only allow POST requests
   if (req.method !== "POST") {
+    console.log(`❌ Method ${req.method} not allowed`);
     return res.status(405).json({ error: "Method not allowed" });
   }
 
   try {
     console.log("🤖 Proxying request to OpenRouter API");
+    console.log("🔑 API Key present:", !!process.env.OPENROUTER_API_KEY);
+    console.log("🌐 Site URL:", process.env.SITE_URL);
+    console.log("📝 Site Title:", process.env.SITE_TITLE);
+
+    // Validate that we have the required environment variables
+    if (!process.env.OPENROUTER_API_KEY) {
+      console.error("❌ OPENROUTER_API_KEY environment variable not set");
+      return res.status(500).json({
+        error: "Server configuration error: API key not configured",
+      });
+    }
 
     const response = await fetch(
       "https://openrouter.ai/api/v1/chat/completions",
@@ -34,23 +47,29 @@ export default async function handler(req, res) {
     );
 
     if (!response.ok) {
-      console.error(
-        "❌ OpenRouter API Error:",
-        response.status,
-        response.statusText
-      );
-      const errorData = await response.json().catch(() => ({}));
+      const errorText = await response.text();
+      console.error("❌ OpenRouter API Error:", {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText,
+      });
+
       return res.status(response.status).json({
-        error: errorData.error?.message || "API request failed",
+        error: `OpenRouter API error: ${response.statusText}`,
+        details: errorText,
         status: response.status,
       });
     }
 
     const data = await response.json();
-    console.log("✅ OpenRouter API Success");
+    console.log("✅ OpenRouter API Success - Response received");
+
     res.status(200).json(data);
   } catch (error) {
     console.error("💥 Server Error:", error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({
+      error: "Internal server error",
+      message: error.message,
+    });
   }
 }

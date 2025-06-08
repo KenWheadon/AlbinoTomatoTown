@@ -1,13 +1,26 @@
 {
   "functions": {
-    "api/config.js": {
+    "api/chat.js": {
       "runtime": "@vercel/node@18"
     }
   },
-  "rewrites": [
+  "headers": [
     {
-      "source": "/js/utils/config.js",
-      "destination": "/api/config"
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "X-Requested-With, Content-Type, Authorization"
+        }
+      ]
     }
   ]
 }
