@@ -1,6 +1,6 @@
 class GameState {
   constructor() {
-    this.currentLocation = GARDEN;
+    this.currentLocation = TOWN_CENTER;
     this.visitedLocations = new Set();
     this.conversationHistories = new Map();
     this.unlockedAchievements = new Set();

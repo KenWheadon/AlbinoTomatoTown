@@ -1,30 +1,27 @@
 const items = {
   [OLD_BOOT]: {
-    description:
-      "An old muddy boot. Someone must have lost this while gardening. There's something carved into the heel...",
-    X: 120,
-    Y: 180,
+    description: "Seems to have been used frequently as a chew toy.",
+    X: 80,
+    Y: 250,
     img: "boot",
   },
-  [RUSTY_KEY]: {
-    description:
-      "A rusty old key. I wonder what it unlocks? It has strange symbols etched into it.",
-    X: 300,
-    Y: 90,
-    img: "key",
+  [BRASS_KNUCKLES]: {
+    description: "The initials AT are carved into them.",
+    X: 180,
+    Y: 120,
+    img: "brass_knuckles",
   },
-  [GARDEN_JOURNAL]: {
+  [MAGAZINE]: {
     description:
-      "A weathered journal filled with garden notes. The last entry mentions a 'secret beneath the roots'.",
-    X: 80,
+      "The front page is a cover of Cucumber Gal, looks like she's a glamor model.",
+    X: 150,
     Y: 220,
-    img: "journal",
+    img: "magazine",
   },
-  [LILY_PAD]: {
-    description:
-      "A large lily pad floating on the water. It seems to shimmer with an otherworldly glow.",
-    X: 250,
-    Y: 160,
-    img: "lily_pad",
+  [RUSTY_KEY]: {
+    description: "One of those old' timey keys. Awful big though.",
+    X: 220,
+    Y: 180,
+    img: "rusty_key",
   },
 };

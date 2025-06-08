@@ -1,6 +1,6 @@
 class GameEngine {
   constructor() {
-    this.currentLocation = GARDEN;
+    this.currentLocation = TOWN_CENTER;
     this.gameState = new GameState();
     this.renderer = new Renderer();
     this.interactionHandler = new InteractionHandler(this);

@@ -271,8 +271,9 @@ class AIService {
     characterAchievements.forEach((achievement) => {
       if (achievement.isUnlocked) return;
 
+      // Check if response contains any of the trigger keywords
       const hasKeywords = achievement.triggerKeywords.some((keyword) =>
-        response.toLowerCase().includes(keyword.toLowerCase())
+        response.toUpperCase().includes(keyword.toUpperCase())
       );
 
       if (hasKeywords) {

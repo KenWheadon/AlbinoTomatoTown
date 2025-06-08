@@ -1,21 +1,22 @@
 // Location constants
-const GARDEN = "garden";
-const GREENHOUSE = "greenhouse";
-const SHED = "shed";
-const POND = "pond";
+const TOWN_CENTER = "town_center";
+const SALOON = "saloon";
+const SALOON_BACKROOM = "saloon_backroom";
 
 // Character constants
 const ALBINO_TOMATO = "albino_tomato";
-const WISE_OAK = "wise_oak";
-const CHATTY_DAISY = "chatty_daisy";
-const WISE_FROG = "wise_frog";
+const CUCUMBER_GAL = "cucumber_gal";
+const GREEN_PEPPER_GAL = "green_pepper_gal";
+const PUMPKIN_PETE = "pumpkin_pete";
 
 // Item constants
 const OLD_BOOT = "old_boot";
+const BRASS_KNUCKLES = "brass_knuckles";
+const MAGAZINE = "magazine";
 const RUSTY_KEY = "rusty_key";
-const GARDEN_JOURNAL = "garden_journal";
-const LILY_PAD = "lily_pad";
 
 // Achievement constants
-const TOMATO_SECRET = "tomato_secret";
-const OAK_WISDOM = "oak_wisdom";
+const GRILLED_TOMATO = "grilled_tomato";
+const GALS_BEST_FRIEND = "gals_best_friend";
+const THE_COLOR_OF_ENVY = "the_color_of_envy";
+const PUMPKIN_PALS = "pumpkin_pals";

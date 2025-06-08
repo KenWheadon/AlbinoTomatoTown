@@ -351,16 +351,12 @@ class AchievementManager {
     );
 
     characterAchievements.forEach((achievement) => {
-      const messageHasTrigger = Utils.containsKeywords(
-        message,
-        achievement.triggerKeywords
-      );
-      const responseHasTrigger = Utils.containsKeywords(
-        response,
-        achievement.triggerKeywords
+      // Check if the character's response contains the trigger keyword
+      const responseHasTrigger = achievement.triggerKeywords.some((keyword) =>
+        response.toUpperCase().includes(keyword.toUpperCase())
       );
 
-      if (messageHasTrigger || responseHasTrigger) {
+      if (responseHasTrigger) {
         this.unlockAchievement(achievement.id);
       }
     });
