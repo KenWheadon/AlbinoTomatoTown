@@ -4,9 +4,9 @@ class GameEngine {
     this.gameState = new GameState();
     this.renderer = new Renderer();
     this.interactionHandler = new InteractionHandler(this);
-    this.conversationManager = new ConversationManager();
+    this.conversationManager = new ConversationManager(this);
     this.locationNavigator = new LocationNavigator(this);
-    this.achievementManager = new AchievementManager();
+    this.achievementManager = new AchievementManager(this);
   }
 
   start() {

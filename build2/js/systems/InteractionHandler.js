@@ -79,22 +79,8 @@ class InteractionHandler {
   }
 
   handleKeyPress(event) {
-    // ESC - Close conversations/panels
-    if (event.key === "Escape") {
-      GameEvents.emit("ui_escape_pressed");
-    }
-
-    // Space - Interact with nearest character
-    if (event.key === " " || event.key === "Spacebar") {
-      event.preventDefault();
-      this.interactWithNearestCharacter();
-    }
-
-    // Numbers 1-9 - Quick navigation
-    if (event.key >= "1" && event.key <= "9") {
-      const index = parseInt(event.key) - 1;
-      GameEvents.emit("quick_navigate", index);
-    }
+    // Keyboard shortcuts disabled during development
+    // TODO: Re-enable keyboard shortcuts later if needed
   }
 
   handleTouch(event) {

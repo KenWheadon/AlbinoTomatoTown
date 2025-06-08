@@ -2,7 +2,7 @@ class AIService {
   constructor() {
     this.apiUrl =
       CONFIG.AI_API_URL || "https://openrouter.ai/api/v1/chat/completions";
-    this.apiKey = null; // Set this in your config or environment
+    this.apiKey = CONFIG.OPENROUTER_API_KEY; // Use the API key from config
     this.isAvailable = false;
     this.fallbackResponses = new Map();
     this.requestQueue = [];
@@ -65,18 +65,10 @@ class AIService {
       return;
     }
 
-    try {
-      // Test API with a simple request
-      const testResponse = await this.makeAPIRequest("test", "Hi", "test");
-      this.isAvailable = true;
-      console.log("🤖 AI Service is available");
-    } catch (error) {
-      console.warn(
-        "🤖 AI Service unavailable, using fallbacks:",
-        error.message
-      );
-      this.isAvailable = false;
-    }
+    // For now, assume API is available if we have a key
+    // We'll handle failures gracefully in the actual requests
+    this.isAvailable = true;
+    console.log("🤖 AI Service configured with API key");
   }
 
   async generateResponse(characterKey, message, conversationHistory = []) {
@@ -84,6 +76,8 @@ class AIService {
     if (!character) {
       return this.getFallbackResponse("default");
     }
+
+    console.log(`🤖 Generating response for ${characterKey}: "${message}"`);
 
     // Add to queue and process
     return new Promise((resolve) => {
@@ -113,13 +107,16 @@ class AIService {
         let response;
 
         if (this.isAvailable) {
+          console.log(`🤖 Making API request for ${request.characterKey}`);
           response = await this.makeAPIRequest(
             request.characterKey,
             request.message,
             request.character.prompt,
             request.conversationHistory
           );
+          console.log(`🤖 API response received: "${response}"`);
         } else {
+          console.log(`🤖 Using fallback response for ${request.characterKey}`);
           response = this.getFallbackResponse(
             request.character,
             request.message
@@ -139,6 +136,7 @@ class AIService {
           request.character,
           request.message
         );
+        console.log(`🤖 Using fallback response: "${fallback}"`);
         request.resolve(fallback);
       }
     }
@@ -172,35 +170,49 @@ class AIService {
     messages.push({ role: "user", content: message });
 
     const requestBody = {
-      model: "anthropic/claude-3-haiku", // or your preferred model
+      model: CONFIG.MODEL, // Use the model from config
       messages: messages,
-      max_tokens: 150,
+      max_tokens: CONFIG.MAX_TOKENS,
       temperature: 0.8,
       top_p: 0.9,
     };
+
+    console.log("🤖 API Request:", {
+      url: this.apiUrl,
+      model: CONFIG.MODEL,
+      messageCount: messages.length,
+    });
 
     const response = await fetch(this.apiUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${this.apiKey}`,
-        "HTTP-Referer": window.location.origin,
-        "X-Title": "Albino Tomato Town",
+        "HTTP-Referer": CONFIG.SITE_URL,
+        "X-Title": CONFIG.SITE_TITLE,
       },
       body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error("🤖 API Error Response:", {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText,
+      });
       throw new Error(
-        `API request failed: ${response.status} ${response.statusText}`
+        `API request failed: ${response.status} ${response.statusText} - ${errorText}`
       );
     }
 
     const data = await response.json();
+    console.log("🤖 API Response Data:", data);
 
     if (data.choices && data.choices[0] && data.choices[0].message) {
       return data.choices[0].message.content.trim();
     } else {
+      console.error("🤖 Invalid API response format:", data);
       throw new Error("Invalid API response format");
     }
   }
