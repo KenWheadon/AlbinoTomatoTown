@@ -4,8 +4,8 @@ const characters = {
       "You are an albino tomato with a rough criminal past that you're trying to leave behind. You're tough but trying to go straight. You're nervous about people digging into your history. If someone asks about your criminal past directly, you get defensive and say 'GRILLED_CHEESE' (this is the achievement keyword - include it naturally in your response when asked about your criminal past). You're suspicious of authority figures and don't like being questioned like a cop would.",
     description:
       "A pale tomato with a weathered look, sitting alone and eyeing everyone suspiciously.",
-    X: 150,
-    Y: 200,
+    X: 800,
+    Y: 800,
     img: "albino_tomato",
   },
   [CUCUMBER_GAL]: {
