@@ -4,7 +4,9 @@ class AssetManager {
     this.sounds = new Map();
     this.loadedAssets = new Set();
     this.failedAssets = new Set();
-    this.loadingPromises = new Map(); // Add promise cache for deduplication
+    this.loadingPromises = new Map();
+    this.preloadProgress = { loaded: 0, total: 0, percentage: 0 };
+    this.onProgressCallback = null;
 
     // Placeholder colors for different asset types
     this.placeholderColors = {
@@ -13,6 +15,109 @@ class AssetManager {
       background: "#8BC34A",
       ui: "#FF9800",
     };
+  }
+
+  // Set progress callback for loading indicators
+  setProgressCallback(callback) {
+    this.onProgressCallback = callback;
+  }
+
+  // Update progress and notify callback
+  updateProgress() {
+    if (this.preloadProgress.total > 0) {
+      this.preloadProgress.percentage = Math.round(
+        (this.preloadProgress.loaded / this.preloadProgress.total) * 100
+      );
+    }
+
+    if (this.onProgressCallback) {
+      this.onProgressCallback(this.preloadProgress);
+    }
+  }
+
+  // Preload all game assets at startup
+  async preloadAllAssets() {
+    console.log("📦 Starting comprehensive asset preload...");
+
+    const allAssets = this.getAllGameAssets();
+    this.preloadProgress.total = allAssets.length;
+    this.preloadProgress.loaded = 0;
+
+    this.updateProgress();
+
+    const promises = allAssets.map(async (asset) => {
+      try {
+        if (asset.type === "image") {
+          await this.loadImage(asset.path, asset.category);
+        } else if (asset.type === "sound") {
+          await this.loadSound(asset.path);
+        }
+        this.preloadProgress.loaded++;
+        this.updateProgress();
+      } catch (error) {
+        console.warn(`Failed to preload ${asset.path}:`, error);
+        this.preloadProgress.loaded++;
+        this.updateProgress();
+      }
+    });
+
+    await Promise.allSettled(promises);
+
+    console.log(
+      `📦 Preload complete: ${this.preloadProgress.loaded}/${this.preloadProgress.total} assets`
+    );
+    return this.preloadProgress;
+  }
+
+  // Get all assets used in the game
+  getAllGameAssets() {
+    const assets = [];
+
+    // Background images
+    Object.entries(locations).forEach(([key, location]) => {
+      assets.push({
+        path: `backgrounds/${location.background}`,
+        type: "image",
+        category: "background",
+      });
+    });
+
+    // Character images
+    Object.entries(characters).forEach(([key, character]) => {
+      assets.push({
+        path: `characters/${character.img}`,
+        type: "image",
+        category: "character",
+      });
+    });
+
+    // Item images
+    Object.entries(items).forEach(([key, item]) => {
+      assets.push({
+        path: `items/${item.img}`,
+        type: "image",
+        category: "item",
+      });
+    });
+
+    // Common sound effects
+    const soundEffects = [
+      "effects/character_interact.mp3",
+      "effects/item_examine.mp3",
+      "effects/location_change.mp3",
+      "effects/achievement.mp3",
+      "effects/ui_hover.mp3",
+    ];
+
+    soundEffects.forEach((sound) => {
+      assets.push({
+        path: sound,
+        type: "sound",
+        category: "effect",
+      });
+    });
+
+    return assets;
   }
 
   // Load image with fallback to colored placeholder
@@ -128,14 +233,17 @@ class AssetManager {
 
     switch (name) {
       case "garden":
+      case "town_center":
         gradient.addColorStop(0, "#87CEEB");
         gradient.addColorStop(1, "#228B22");
         break;
       case "greenhouse":
+      case "saloon":
         gradient.addColorStop(0, "#98FB98");
         gradient.addColorStop(1, "#006400");
         break;
       case "shed":
+      case "saloon_backroom":
         gradient.addColorStop(0, "#D2B48C");
         gradient.addColorStop(1, "#8B4513");
         break;
@@ -152,7 +260,7 @@ class AssetManager {
     ctx.font = "48px Arial";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(name.toUpperCase(), 400, 300);
+    ctx.fillText(name.toUpperCase().replace(/_/g, " "), 400, 300);
 
     const img = new Image();
     img.src = canvas.toDataURL();
@@ -224,7 +332,7 @@ class AssetManager {
     return this.images.get(fullPath);
   }
 
-  // Preload all assets for a location
+  // Preload all assets for a location (now mostly cached)
   async preloadLocationAssets(locationData) {
     const promises = [];
 
@@ -249,7 +357,7 @@ class AssetManager {
 
     try {
       await Promise.all(promises);
-      console.log(`📦 Preloaded assets for location`);
+      console.log(`📦 Location assets ready (cached)`);
     } catch (error) {
       console.warn("Some assets failed to load, but placeholders are ready");
     }
@@ -261,6 +369,12 @@ class AssetManager {
       loaded: this.loadedAssets.size,
       failed: this.failedAssets.size,
       total: this.loadedAssets.size + this.failedAssets.size,
+      preloadProgress: this.preloadProgress,
     };
+  }
+
+  // Check if all critical assets are loaded
+  isReady() {
+    return this.preloadProgress.loaded >= this.preloadProgress.total * 0.8; // 80% loaded is "ready"
   }
 }

@@ -8,6 +8,7 @@ class AchievementManager {
     this.notificationQueue = [];
     this.isShowingNotification = false;
     this.hasNewAchievements = false;
+    this.onAllAchievementsUnlocked = null; // Callback function
 
     this.loadAchievements();
     this.createAchievementUI();
@@ -15,6 +16,11 @@ class AchievementManager {
     this.setupEventListeners();
 
     console.log("🏆 Achievement manager initialized");
+  }
+
+  // Set callback for when all achievements are unlocked
+  setAllAchievementsUnlockedCallback(callback) {
+    this.onAllAchievementsUnlocked = callback;
   }
 
   loadAchievements() {
@@ -206,6 +212,14 @@ class AchievementManager {
     this.updateProgress();
     this.updateButtonProgress();
 
+    // Check for victory condition and call callback if provided
+    if (this.hasUnlockedAll() && this.onAllAchievementsUnlocked) {
+      console.log("🎉 All achievements unlocked! Calling victory callback...");
+      setTimeout(() => {
+        this.onAllAchievementsUnlocked();
+      }, 2000); // Delay to let the achievement notification show first
+    }
+
     console.log(`🏆 Achievement unlocked: ${achievement.title}`);
     return true;
   }
@@ -369,10 +383,10 @@ class AchievementManager {
         ? `<div class="achievement-unlock-time">Unlocked: ${achievement.unlockedAt.toLocaleDateString()}</div>`
         : "";
 
-    // Show description only for unlocked achievements
+    // Only show description for unlocked achievements
     const descriptionHtml = achievement.isUnlocked
       ? `<div class="achievement-description">${achievement.description}</div>`
-      : ""; // Remove the ??? placeholder entirely
+      : "";
 
     element.innerHTML = `
             <div class="achievement-icon">
