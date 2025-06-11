@@ -3,21 +3,75 @@
 /* Interactable Elements */
 .interactable {
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   border-radius: 8px;
+  position: relative;
 }
 
+/* Remove the old square border/background effects */
 .interactable:hover {
-  transform: scale(1.05);
-  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.6));
+  transform: scale(1.08);
+  filter: brightness(1.15) saturate(1.2)
+    drop-shadow(0 0 15px rgba(255, 255, 255, 0.4));
 }
 
 .interactable.character:hover {
-  filter: drop-shadow(0 0 12px rgba(76, 175, 80, 0.8));
+  filter: brightness(1.2) saturate(1.3)
+    drop-shadow(0 0 20px rgba(76, 175, 80, 0.6))
+    drop-shadow(0 0 8px rgba(76, 175, 80, 0.8));
 }
 
 .interactable.item:hover {
-  filter: drop-shadow(0 0 12px rgba(33, 150, 243, 0.8));
+  filter: brightness(1.2) saturate(1.3)
+    drop-shadow(0 0 20px rgba(33, 150, 243, 0.6))
+    drop-shadow(0 0 8px rgba(33, 150, 243, 0.8));
+}
+
+/* Subtle pulsing glow animation for extra polish */
+.interactable:hover::before {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  right: -10px;
+  bottom: -10px;
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.1) 0%,
+    transparent 70%
+  );
+  border-radius: 50%;
+  animation: pulse-glow 2s ease-in-out infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.interactable.character:hover::before {
+  background: radial-gradient(
+    circle,
+    rgba(76, 175, 80, 0.15) 0%,
+    transparent 70%
+  );
+}
+
+.interactable.item:hover::before {
+  background: radial-gradient(
+    circle,
+    rgba(33, 150, 243, 0.15) 0%,
+    transparent 70%
+  );
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* Click Effects */
@@ -26,6 +80,13 @@
   border-radius: 50%;
   pointer-events: none;
   z-index: 9999;
+}
+
+/* Active/Pressed State */
+.interactable:active {
+  transform: scale(0.95);
+  filter: brightness(0.9);
+  transition: all 0.1s ease;
 }
 
 /* Floating Text */
@@ -43,6 +104,7 @@
   cursor: default;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(5px);
 }
 
 .floating-text.clickable {
@@ -55,6 +117,7 @@
   background: rgba(0, 0, 0, 0.9) !important;
   border: 1px solid rgba(255, 255, 255, 0.3);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
 }
 
 .tooltip-header {
@@ -112,45 +175,53 @@
   font-style: italic;
 }
 
-/* Hover Effects */
+/* Optional: Add a subtle selection indicator that appears beneath the element */
 .interactable::after {
   content: "";
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: inherit;
-  opacity: 0;
-  transition: opacity 0.2s;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%) scaleX(0);
+  width: 80%;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.8),
+    transparent
+  );
+  border-radius: 2px;
+  transition: transform 0.3s ease;
   pointer-events: none;
 }
 
+.interactable.character::after {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(76, 175, 80, 0.8),
+    transparent
+  );
+}
+
+.interactable.item::after {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(33, 150, 243, 0.8),
+    transparent
+  );
+}
+
 .interactable:hover::after {
-  opacity: 1;
+  transform: translateX(-50%) scaleX(1);
 }
 
-/* Character specific styles */
-.interactable.character {
-  border: 2px solid transparent;
-  transition: all 0.3s ease;
-}
-
-.interactable.character:hover {
-  border-color: rgba(76, 175, 80, 0.5);
-  background: rgba(76, 175, 80, 0.1);
-}
-
-/* Item specific styles */
+/* Remove the old border/background styles completely */
+.interactable.character,
 .interactable.item {
-  border: 2px solid transparent;
-  transition: all 0.3s ease;
-}
-
-.interactable.item:hover {
-  border-color: rgba(33, 150, 243, 0.5);
-  background: rgba(33, 150, 243, 0.1);
+  border: none;
+  background: none;
 }
 
 /* Mobile responsive */
@@ -178,7 +249,33 @@
     padding: 10px 12px;
   }
 
+  /* Reduce hover effects on mobile for better performance */
   .interactable:hover {
-    transform: scale(1.02);
+    transform: scale(1.05);
+    filter: brightness(1.1) saturate(1.1);
   }
+
+  .interactable:hover::before {
+    animation: none;
+    opacity: 0.3;
+  }
+
+  .interactable::after {
+    display: none; /* Hide underline on mobile */
+  }
+}
+
+/* Focus states for accessibility */
+.interactable:focus {
+  outline: 2px solid rgba(255, 255, 255, 0.6);
+  outline-offset: 4px;
+  border-radius: 8px;
+}
+
+.interactable.character:focus {
+  outline-color: rgba(76, 175, 80, 0.8);
+}
+
+.interactable.item:focus {
+  outline-color: rgba(33, 150, 243, 0.8);
 }

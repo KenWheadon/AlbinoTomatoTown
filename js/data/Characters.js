@@ -6,7 +6,7 @@ const characters = {
       "A pale tomato with a weathered look, sitting alone and eyeing everyone suspiciously.",
     X: 1250,
     Y: 800,
-    scale: 5.2, // Slightly larger than default
+    scale: 5.2,
     img: "albino_tomato",
   },
   [CUCUMBER_GAL]: {
@@ -14,9 +14,9 @@ const characters = {
       "You are Cucumber Gal, a confident and successful glamor model who's made it big. You're flirty, business-minded, and proud of your success. You love your little dog Pickle dearly - he's your best friend and companion. If someone gets you talking about Pickle and how much you love him, you'll say 'PICKLE_PERFECT' (this is the achievement keyword - include it naturally when talking about your dog being your best friend). You're stylish, charming, and a bit of a show-off.",
     description:
       "A stunning cucumber with perfect curves, posing confidently with an air of success.",
-    X: 175,
-    Y: 350,
-    scale: 4, // Slightly larger to show her prominence
+    X: 250,
+    Y: 390,
+    scale: 4,
     img: "cucumber_gal",
   },
   [GREEN_PEPPER_GAL]: {
@@ -25,8 +25,8 @@ const characters = {
     description:
       "A sharp-looking green pepper with a scowl, clearly bothered by something.",
     X: 1450,
-    Y: 350,
-    scale: 4.5, // Slightly smaller to show her feeling diminished
+    Y: 536,
+    scale: 4.5,
     img: "green_pepper_gal",
   },
   [PUMPKIN_PETE]: {
@@ -34,9 +34,9 @@ const characters = {
       "You are Pumpkin Pete, a friendly and helpful guy who's always willing to lend a hand. You're currently worried because you've lost your important key and can't find it anywhere. You're grateful for any help and always try to help others in return. If someone mentions they found your key or offers to help you find it, you'll be overjoyed and say 'PUMPKIN_SPICE' (this is the achievement keyword - include it naturally when you're happy about getting help with your key). You're warm, neighborly, and optimistic.",
     description:
       "A large, friendly pumpkin with a warm smile, but looking a bit worried about something.",
-    X: 1050,
-    Y: 500,
-    scale: 8, // Much larger since he's a pumpkin
+    X: 1150,
+    Y: 700,
+    scale: 8,
     img: "pumpkin_pete",
   },
 };

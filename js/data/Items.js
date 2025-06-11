@@ -8,8 +8,8 @@ const items = {
   },
   [BRASS_KNUCKLES]: {
     description: "The initials AT are carved into them.",
-    X: 1050,
-    Y: 700,
+    X: 1000,
+    Y: 750,
     scale: 1.4,
     img: "brass_knuckles",
   },
@@ -17,7 +17,7 @@ const items = {
     description:
       "The front page is a cover of Cucumber Gal, looks like she's a glamor model.",
     X: 250,
-    Y: 650,
+    Y: 675,
     scale: 1.4,
     img: "magazine",
   },
