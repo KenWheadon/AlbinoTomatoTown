@@ -32,3 +32,28 @@ body {
 .interactable:hover {
   transform: scale(1.1);
 }
+
+.scaled-game-container {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+}
+
+/* Improve text rendering at different scales */
+.floating-text,
+.detailed-tooltip {
+  font-size: calc(14px * var(--scale-factor, 1));
+}
+
+/* Mobile-specific adjustments */
+@media (max-width: 768px) {
+  .conversation-panel {
+    width: 95vw !important;
+    height: 70vh !important;
+  }
+
+  .achievement-panel {
+    width: 95vw !important;
+    max-height: 80vh !important;
+  }
+}

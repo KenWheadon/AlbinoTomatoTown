@@ -2,7 +2,7 @@ class InteractionHandler {
   constructor(gameEngine) {
     this.gameEngine = gameEngine;
     this.isInteractionBlocked = false;
-    this.activeTooltips = new Map(); // Track active tooltips
+    this.activeTooltips = new Map();
     this.setupEventListeners();
 
     console.log("🖱️ Interaction handler initialized");
@@ -116,7 +116,7 @@ class InteractionHandler {
     const size = Math.max(rect.width, rect.height);
 
     ripple.style.width = ripple.style.height = size + "px";
-    ripple.style.position = "absolute";
+    ripple.style.position = "fixed"; // Use fixed positioning for screen coordinates
     ripple.style.left = rect.left + rect.width / 2 - size / 2 + "px";
     ripple.style.top = rect.top + rect.height / 2 - size / 2 + "px";
     ripple.style.background = "rgba(255,255,255,0.6)";
@@ -191,18 +191,18 @@ class InteractionHandler {
     // Block rapid clicking
     this.blockInteractions(200);
 
-    // Get element position for tooltip
+    // Get element position for tooltip (screen coordinates)
     const rect = element.getBoundingClientRect();
     const x = rect.left + rect.width / 2;
     const y = rect.top - 10;
 
-    // Show item description as toggle
+    // Show item description as toggle using screen coordinates
     const tooltip = this.gameEngine.renderer.showFloatingText(
       item.description,
       x,
       y,
-      0
-    ); // 0 duration = no auto-close
+      0 // 0 duration = no auto-close
+    );
     this.activeTooltips.set(tooltipKey, tooltip);
 
     // Emit examination event
@@ -266,16 +266,16 @@ class InteractionHandler {
       return;
     }
 
-    // Create detailed tooltip
+    // Create detailed tooltip using screen coordinates
     const tooltip = document.createElement("div");
-    tooltip.className = "detailed-tooltip floating-text"; // Add floating-text class for click handling
+    tooltip.className = "detailed-tooltip floating-text";
     tooltip.innerHTML = `
             <div class="tooltip-header">${this.formatName(key)}</div>
             <div class="tooltip-description">${data.description}</div>
             <div class="tooltip-close-hint">Click to close</div>
         `;
 
-    tooltip.style.position = "fixed";
+    tooltip.style.position = "fixed"; // Use fixed positioning for screen coordinates
     tooltip.style.left = x + "px";
     tooltip.style.top = y + "px";
     tooltip.style.backgroundColor = "rgba(0,0,0,0.9)";
@@ -286,6 +286,7 @@ class InteractionHandler {
     tooltip.style.fontSize = "12px";
     tooltip.style.zIndex = "10000";
     tooltip.style.cursor = "pointer";
+    tooltip.style.transform = "translate(-50%, -100%)"; // Center and position above cursor
 
     // Add close hint styling
     const closeHint = tooltip.querySelector(".tooltip-close-hint");
@@ -302,10 +303,16 @@ class InteractionHandler {
     // Position adjustment if off-screen
     const rect = tooltip.getBoundingClientRect();
     if (rect.right > window.innerWidth) {
-      tooltip.style.left = x - rect.width + "px";
+      tooltip.style.transform = "translate(-100%, -100%)";
     }
-    if (rect.bottom > window.innerHeight) {
-      tooltip.style.top = y - rect.height - 10 + "px";
+    if (rect.left < 0) {
+      tooltip.style.transform = "translate(0%, -100%)";
+    }
+    if (rect.top < 0) {
+      tooltip.style.transform = tooltip.style.transform.replace(
+        "-100%)",
+        "0%)"
+      );
     }
 
     // Store in active tooltips
@@ -371,7 +378,7 @@ class InteractionHandler {
             <div class="clue-keywords">${keywords.join(", ")}</div>
         `;
 
-    notification.style.position = "fixed";
+    notification.style.position = "fixed"; // Use fixed positioning for UI elements
     notification.style.top = "20px";
     notification.style.right = "20px";
     notification.style.backgroundColor = "rgba(255,215,0,0.9)";

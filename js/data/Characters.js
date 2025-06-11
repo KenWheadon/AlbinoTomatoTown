@@ -5,7 +5,7 @@ const characters = {
     description:
       "A pale tomato with a weathered look, sitting alone and eyeing everyone suspiciously.",
     X: 1250,
-    Y: 475,
+    Y: 800,
     scale: 5.2, // Slightly larger than default
     img: "albino_tomato",
   },

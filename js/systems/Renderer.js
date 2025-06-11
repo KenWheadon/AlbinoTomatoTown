@@ -4,6 +4,9 @@ class Renderer {
     this.assetManager = assetManager || new AssetManager();
     this.currentLocationData = null;
 
+    // Initialize responsive positioning system
+    this.responsivePositioning = new ResponsivePositioning(1920, 1080);
+
     if (!this.container) {
       console.error("Game container not found!");
       return;
@@ -13,10 +16,9 @@ class Renderer {
   }
 
   setupContainer() {
-    this.container.style.position = "relative";
-    this.container.style.width = "100vw";
-    this.container.style.height = "100vh";
-    this.container.style.overflow = "hidden";
+    // The ResponsivePositioning class now handles container setup
+    // Just ensure we have the right reference to the scaled container
+    this.scaledContainer = this.responsivePositioning.getScaledContainer();
   }
 
   async renderLocation(locationData) {
@@ -43,7 +45,8 @@ class Renderer {
 
   clearScreen() {
     // Remove all interactive elements but keep background
-    const interactables = this.container.querySelectorAll(".interactable");
+    const interactables =
+      this.scaledContainer.querySelectorAll(".interactable");
     interactables.forEach((element) => element.remove());
   }
 
@@ -55,24 +58,23 @@ class Renderer {
 
       if (backgroundImg.src.includes("data:")) {
         // It's a canvas-generated placeholder
-        this.container.style.backgroundImage = `url(${backgroundImg.src})`;
+        this.scaledContainer.style.backgroundImage = `url(${backgroundImg.src})`;
       } else {
         // It's a real image
-        this.container.style.backgroundImage = `url(${backgroundImg.src})`;
+        this.scaledContainer.style.backgroundImage = `url(${backgroundImg.src})`;
       }
 
-      this.container.style.backgroundSize = "cover";
-      this.container.style.backgroundPosition = "center";
-      this.container.style.backgroundRepeat = "no-repeat";
+      this.scaledContainer.style.backgroundSize = "cover";
+      this.scaledContainer.style.backgroundPosition = "center";
+      this.scaledContainer.style.backgroundRepeat = "no-repeat";
     } catch (error) {
       console.warn("Failed to set background, using fallback color");
-      this.container.style.background =
+      this.scaledContainer.style.background =
         "linear-gradient(to bottom, #87CEEB, #228B22)";
     }
   }
 
   async renderCharacters(characterKeys) {
-    // Use Promise.all to properly handle async operations
     const promises = characterKeys.map(async (key) => {
       const char = characters[key];
       if (char) {
@@ -84,7 +86,6 @@ class Renderer {
   }
 
   async renderItems(itemKeys) {
-    // Use Promise.all to properly handle async operations
     const promises = itemKeys.map(async (key) => {
       const item = items[key];
       if (item) {
@@ -104,15 +105,15 @@ class Renderer {
 
     // Get scale factor (default to 1 if not specified)
     const scale = data.scale || 1;
-    const baseSize = 64;
-    const scaledSize = baseSize * scale;
 
-    // Position element
-    element.style.position = "absolute";
-    element.style.left = data.X + "px";
-    element.style.top = data.Y + "px";
-    element.style.width = scaledSize + "px";
-    element.style.height = scaledSize + "px";
+    // Use responsive positioning instead of absolute pixels
+    this.responsivePositioning.applyResponsivePosition(
+      element,
+      data.X,
+      data.Y,
+      scale
+    );
+
     element.style.cursor = "pointer";
     element.style.transition = "transform 0.2s ease";
 
@@ -136,8 +137,8 @@ class Renderer {
     // Add hover effects
     this.addHoverEffects(element);
 
-    // Add to container with entrance animation
-    this.container.appendChild(element);
+    // Add to scaled container with entrance animation
+    this.scaledContainer.appendChild(element);
     this.animateElementEntrance(element);
   }
 
@@ -149,8 +150,6 @@ class Renderer {
         ease: "power2.out",
       });
 
-      // Remove the drop-shadow filter that creates the border
-      // Replace with a subtle glow without hard edges
       element.style.filter = "brightness(1.2) saturate(1.1)";
     });
 
@@ -164,7 +163,7 @@ class Renderer {
       element.style.filter = "none";
     });
 
-    // Click animation
+    // Updated click animation to work with responsive positioning
     element.addEventListener("mousedown", () => {
       gsap.to(element, {
         scale: 0.95,
@@ -198,9 +197,9 @@ class Renderer {
   }
 
   playLocationTransition() {
-    // Fade in the entire container
+    // Fade in the entire scaled container
     gsap.fromTo(
-      this.container,
+      this.scaledContainer,
       {
         opacity: 0,
         filter: "blur(5px)",
@@ -214,25 +213,29 @@ class Renderer {
     );
   }
 
-  // Show floating text (for item descriptions, etc.)
-  // Modified to support duration = 0 for no auto-close
+  // Updated showFloatingText to work with responsive positioning
   showFloatingText(text, x, y, duration = 3000) {
     const textElement = document.createElement("div");
     textElement.className = "floating-text";
     textElement.textContent = text;
+
+    // Convert screen coordinates to design coordinates if needed
+    const designCoords = this.responsivePositioning.screenToDesign(x, y);
+
     textElement.style.position = "absolute";
-    textElement.style.left = x + "px";
-    textElement.style.top = y + "px";
+    textElement.style.left = designCoords.x + "px";
+    textElement.style.top = designCoords.y + "px";
     textElement.style.color = "white";
     textElement.style.backgroundColor = "rgba(0,0,0,0.8)";
     textElement.style.padding = "8px 12px";
     textElement.style.borderRadius = "8px";
     textElement.style.fontSize = "14px";
-    textElement.style.pointerEvents = duration === 0 ? "auto" : "none"; // Allow clicks if permanent
+    textElement.style.pointerEvents = duration === 0 ? "auto" : "none";
     textElement.style.zIndex = "1000";
     textElement.style.maxWidth = "200px";
     textElement.style.wordWrap = "break-word";
     textElement.style.cursor = duration === 0 ? "pointer" : "default";
+    textElement.style.transform = "translate(-50%, -50%)";
 
     // Add close hint for permanent tooltips
     if (duration === 0) {
@@ -246,15 +249,17 @@ class Renderer {
       textElement.appendChild(closeHint);
     }
 
-    this.container.appendChild(textElement);
+    this.scaledContainer.appendChild(textElement);
 
-    // Position adjustment if off-screen
+    // Position adjustment if off-screen (using design coordinates)
     const rect = textElement.getBoundingClientRect();
-    if (rect.right > window.innerWidth) {
-      textElement.style.left = x - rect.width + "px";
+    const containerRect = this.scaledContainer.getBoundingClientRect();
+
+    if (rect.right > containerRect.right) {
+      textElement.style.left = designCoords.x - rect.width + "px";
     }
-    if (rect.bottom > window.innerHeight) {
-      textElement.style.top = y - rect.height - 10 + "px";
+    if (rect.bottom > containerRect.bottom) {
+      textElement.style.top = designCoords.y - rect.height - 10 + "px";
     }
 
     // Animate in
@@ -289,12 +294,12 @@ class Renderer {
       }, duration);
     }
 
-    return textElement; // Return element for manual management
+    return textElement;
   }
 
-  // Highlight an interactable (for achievements, hints, etc.)
+  // Updated highlight element to work with responsive positioning
   highlightElement(key, type) {
-    const element = this.container.querySelector(
+    const element = this.scaledContainer.querySelector(
       `[data-key="${key}"][data-type="${type}"]`
     );
     if (element) {
@@ -315,9 +320,9 @@ class Renderer {
     }
   }
 
-  // Get element position for UI positioning
+  // Updated getElementPosition to return screen coordinates
   getElementPosition(key, type) {
-    const element = this.container.querySelector(
+    const element = this.scaledContainer.querySelector(
       `[data-key="${key}"][data-type="${type}"]`
     );
     if (element) {
@@ -330,8 +335,20 @@ class Renderer {
     return null;
   }
 
+  // Get responsive positioning system for external access
+  getResponsivePositioning() {
+    return this.responsivePositioning;
+  }
+
   update() {
     // Called each frame - can be used for animations, particle effects, etc.
     // Currently empty but ready for expansion
+  }
+
+  // Cleanup
+  destroy() {
+    if (this.responsivePositioning) {
+      this.responsivePositioning.destroy();
+    }
   }
 }

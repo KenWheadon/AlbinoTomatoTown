@@ -2,7 +2,7 @@ const items = {
   [OLD_BOOT]: {
     description: "Seems to have been used frequently as a chew toy.",
     X: 140,
-    Y: 810,
+    Y: 850,
     scale: 1,
     img: "boot",
   },
@@ -23,8 +23,8 @@ const items = {
   },
   [RUSTY_KEY]: {
     description: "One of those old' timey keys. Awful big though.",
-    X: 1300,
-    Y: 250,
+    X: 1750,
+    Y: 825,
     scale: 1,
     img: "rusty_key",
   },
