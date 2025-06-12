@@ -12,7 +12,7 @@ const CONFIG = {
   // AI Configuration - Use different endpoints for dev vs production
   get AI_API_URL() {
     if (this.IS_DEVELOPMENT) {
-      // In development, you can use OpenRouter directly (if you want to keep your local config)
+      // In development, you can use OpenRouter directly
       return "https://openrouter.ai/api/v1/chat/completions";
     } else {
       // In production, use your Vercel API endpoint
@@ -20,11 +20,21 @@ const CONFIG = {
     }
   },
 
-  // API Key - only used in development
+  // API Key - loaded from local.config.js in development, handled server-side in production
   get OPENROUTER_API_KEY() {
     if (this.IS_DEVELOPMENT) {
-      // You can put your dev API key here, or load from a local config
-      return "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"; // Your dev key
+      // Check if local config has been loaded
+      if (
+        typeof LOCAL_CONFIG !== "undefined" &&
+        LOCAL_CONFIG.OPENROUTER_API_KEY
+      ) {
+        return LOCAL_CONFIG.OPENROUTER_API_KEY;
+      } else {
+        console.warn(
+          "⚠️ LOCAL_CONFIG not found or missing API key. Create js/utils/local.config.js with your API key."
+        );
+        return null;
+      }
     } else {
       // In production, the API key is handled server-side, so return null
       return null;
@@ -56,6 +66,12 @@ const CONFIG = {
     console.log("  - API URL:", this.AI_API_URL);
     console.log("  - Site URL:", this.SITE_URL);
     console.log("  - Has API Key:", !!this.OPENROUTER_API_KEY);
+    if (this.IS_DEVELOPMENT) {
+      console.log(
+        "  - Local Config Loaded:",
+        typeof LOCAL_CONFIG !== "undefined"
+      );
+    }
   },
 };
 

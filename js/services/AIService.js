@@ -1,7 +1,7 @@
 class AIService {
   constructor() {
     this.apiUrl = CONFIG.AI_API_URL;
-    this.apiKey = CONFIG.OPENROUTER_API_KEY; // Will be null in production
+    this.apiKey = CONFIG.OPENROUTER_API_KEY; // Now properly references local config
     this.isAvailable = false;
     this.fallbackResponses = new Map();
     this.requestQueue = [];
@@ -13,6 +13,12 @@ class AIService {
     console.log("🤖 AI Service initialized");
     console.log("🤖 API URL:", this.apiUrl);
     console.log("🤖 Has API Key:", !!this.apiKey);
+    if (CONFIG.IS_DEVELOPMENT) {
+      console.log(
+        "🤖 Development Mode: Using",
+        this.apiKey ? "local config API key" : "fallback responses only"
+      );
+    }
   }
 
   setupFallbackResponses() {
@@ -63,12 +69,20 @@ class AIService {
     // In development, check if we have an API key
     if (CONFIG.IS_DEVELOPMENT) {
       if (!this.apiKey || !this.apiUrl) {
-        console.warn("🤖 AI API not configured, using fallback responses only");
+        console.warn("🤖 AI API not configured properly.");
+        if (!this.apiKey) {
+          console.warn(
+            "🤖 Missing API key. Create js/utils/local.config.js with your OPENROUTER_API_KEY."
+          );
+        }
+        console.warn("🤖 Using fallback responses only.");
         this.isAvailable = false;
         return;
       }
       this.isAvailable = true;
-      console.log("🤖 AI Service configured for development");
+      console.log(
+        "🤖 AI Service configured for development with local API key"
+      );
     } else {
       // In production, assume the API endpoint is available
       this.isAvailable = true;
@@ -363,6 +377,7 @@ class AIService {
       ),
       environment: CONFIG.IS_DEVELOPMENT ? "development" : "production",
       apiUrl: this.apiUrl,
+      hasApiKey: !!this.apiKey,
     };
   }
 }
