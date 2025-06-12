@@ -7,6 +7,7 @@ class ConversationManager {
     this.conversationPanel = null;
     this.messageHistory = [];
     this.isWaitingForResponse = false;
+    this.isClosing = false; // NEW: Flag to prevent race conditions during closing
 
     this.createConversationUI();
     this.setupEventListeners();
@@ -89,23 +90,36 @@ class ConversationManager {
 
   async startConversation(characterKey, character) {
     console.log(
-      `💬 START CONVERSATION - Current: ${this.currentCharacter}, New: ${characterKey}, Active: ${this.isConversationActive}`
+      `💬 START CONVERSATION - Current: ${this.currentCharacter}, New: ${characterKey}, Active: ${this.isConversationActive}, Closing: ${this.isClosing}`
     );
 
-    // If clicking the same character while conversation is active, do nothing
-    if (this.isConversationActive && this.currentCharacter === characterKey) {
+    // FIXED: If clicking the same character while conversation is active, do nothing
+    if (
+      this.isConversationActive &&
+      this.currentCharacter === characterKey &&
+      !this.isClosing
+    ) {
       console.log(`💬 Already talking to ${characterKey}, ignoring click`);
       return;
     }
 
-    // If a different conversation is active, end it properly first
+    // FIXED: If currently closing a conversation, wait for it to complete
+    if (this.isClosing) {
+      console.log(`💬 Currently closing conversation, waiting...`);
+      await this.waitForClose();
+    }
+
+    // FIXED: If a different conversation is active, end it properly first
     if (this.isConversationActive && this.currentCharacter !== characterKey) {
       console.log(
         `💬 Switching conversation from ${this.currentCharacter} to ${characterKey}`
       );
-      this.endConversation();
-      // Add a small delay to ensure cleanup completes
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await this.endConversationAndWait();
+    }
+
+    // FIXED: Double-check we're not in a closing state after waiting
+    if (this.isClosing) {
+      await this.waitForClose();
     }
 
     this.currentCharacter = characterKey;
@@ -144,6 +158,26 @@ class ConversationManager {
     });
 
     console.log(`💬 Conversation with ${characterKey} fully initialized`);
+  }
+
+  // NEW: Helper method to wait for conversation to finish closing
+  async waitForClose() {
+    return new Promise((resolve) => {
+      const checkClosed = () => {
+        if (!this.isClosing && !this.isConversationActive) {
+          resolve();
+        } else {
+          setTimeout(checkClosed, 50);
+        }
+      };
+      checkClosed();
+    });
+  }
+
+  // NEW: End conversation and wait for it to complete
+  async endConversationAndWait() {
+    this.endConversation();
+    await this.waitForClose();
   }
 
   async generateGreeting(character, history) {
@@ -380,15 +414,17 @@ class ConversationManager {
       ease: "power2.in",
       onComplete: () => {
         this.conversationPanel.style.display = "none";
+        this.isClosing = false; // FIXED: Clear closing flag when animation completes
       },
     });
   }
 
   endConversation() {
-    if (!this.isConversationActive) return;
+    if (!this.isConversationActive || this.isClosing) return;
 
     console.log(`💬 Ending conversation with ${this.currentCharacter}`);
 
+    this.isClosing = true; // FIXED: Set closing flag to prevent race conditions
     this.isConversationActive = false;
     this.hideConversation();
 
@@ -416,6 +452,7 @@ class ConversationManager {
       currentCharacter: this.currentCharacter,
       messageCount: this.messageHistory.length,
       isWaiting: this.isWaitingForResponse,
+      isClosing: this.isClosing, // FIXED: Include closing state in status
     };
   }
 

@@ -383,8 +383,8 @@ class AchievementManager {
         ? `<div class="achievement-unlock-time">Unlocked: ${achievement.unlockedAt.toLocaleDateString()}</div>`
         : "";
 
-    // Only show title and description for unlocked achievements
-    // For locked achievements, only show hint
+    // FIXED: Only show real information for unlocked achievements
+    // For locked achievements, show only question marks
     let contentHtml;
     if (achievement.isUnlocked) {
       contentHtml = `
@@ -393,11 +393,11 @@ class AchievementManager {
         ${unlockTimeHtml}
       `;
     } else {
+      // CHANGED: Completely hide all information for locked achievements
       contentHtml = `
         <div class="achievement-title">???</div>
-        <div class="achievement-hint">${
-          achievement.hint || "Keep exploring to unlock this achievement!"
-        }</div>
+        <div class="achievement-description">???</div>
+        <div class="achievement-hint">Keep exploring to unlock this achievement!</div>
       `;
     }
 

@@ -126,6 +126,9 @@ class VictoryScreen {
     // Show the screen
     this.victoryElement.classList.add("visible");
 
+    // FIXED: Prevent body scrollbars by setting overflow hidden
+    document.body.style.overflow = "hidden";
+
     // Play victory sequence
     this.playVictorySequence();
 
@@ -144,6 +147,9 @@ class VictoryScreen {
   hide() {
     this.isShowing = false;
     this.victoryElement.classList.remove("visible");
+
+    // FIXED: Restore body scrolling
+    document.body.style.overflow = "";
   }
 
   updateStats() {
@@ -259,7 +265,7 @@ class VictoryScreen {
       );
     });
 
-    // Confetti effect (simplified to avoid overflow issues)
+    // FIXED: Improved confetti effect with better containment
     this.createConfetti();
   }
 
@@ -267,19 +273,21 @@ class VictoryScreen {
     const colors = ["#FFD700", "#4CAF50", "#2196F3", "#FF9800", "#E91E63"];
     const emojis = ["🍅", "🥒", "🫑", "🎃", "⭐", "🎉", "✨"];
 
-    // Create confetti container to control overflow
+    // FIXED: Better confetti container positioning and overflow management
     const confettiContainer = document.createElement("div");
-    confettiContainer.className = "confetti-container";
-    confettiContainer.style.position = "fixed";
-    confettiContainer.style.top = "0";
-    confettiContainer.style.left = "0";
-    confettiContainer.style.width = "100vw";
-    confettiContainer.style.height = "100vh";
-    confettiContainer.style.pointerEvents = "none";
-    confettiContainer.style.overflow = "hidden";
-    confettiContainer.style.zIndex = "10000";
+    confettiContainer.className = "victory-confetti-container";
+    confettiContainer.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 10001;
+    `;
 
-    document.body.appendChild(confettiContainer);
+    this.victoryElement.appendChild(confettiContainer);
 
     for (let i = 0; i < 30; i++) {
       setTimeout(() => {
@@ -291,20 +299,27 @@ class VictoryScreen {
             emojis[Math.floor(Math.random() * emojis.length)];
           confetti.style.fontSize = "20px";
         } else {
-          confetti.style.width = "10px";
-          confetti.style.height = "10px";
-          confetti.style.backgroundColor =
-            colors[Math.floor(Math.random() * colors.length)];
-          confetti.style.borderRadius = "50%";
+          confetti.style.cssText = `
+            width: 10px;
+            height: 10px;
+            background-color: ${
+              colors[Math.floor(Math.random() * colors.length)]
+            };
+            border-radius: 50%;
+          `;
         }
 
-        confetti.style.position = "absolute";
-        confetti.style.left = Math.random() * 100 + "vw";
-        confetti.style.top = "-20px";
-        confetti.style.pointerEvents = "none";
+        confetti.style.cssText += `
+          position: absolute;
+          left: ${Math.random() * 100}vw;
+          top: -20px;
+          pointer-events: none;
+          z-index: 10002;
+        `;
 
         confettiContainer.appendChild(confetti);
 
+        // FIXED: Better confetti animation with proper cleanup
         gsap.to(confetti, {
           y: window.innerHeight + 50,
           x: `+=${Math.random() * 200 - 100}`,
@@ -320,9 +335,9 @@ class VictoryScreen {
       }, i * 100);
     }
 
-    // Clean up confetti container after all animations
+    // FIXED: Clean up confetti container after all animations with safety check
     setTimeout(() => {
-      if (confettiContainer.parentNode) {
+      if (confettiContainer && confettiContainer.parentNode) {
         confettiContainer.parentNode.removeChild(confettiContainer);
       }
     }, 8000);
@@ -334,6 +349,9 @@ class VictoryScreen {
   }
 
   destroy() {
+    // FIXED: Restore body overflow when destroying
+    document.body.style.overflow = "";
+
     if (this.victoryElement && this.victoryElement.parentNode) {
       this.victoryElement.parentNode.removeChild(this.victoryElement);
     }
