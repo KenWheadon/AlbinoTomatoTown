@@ -1,24 +1,33 @@
 class AIService {
   constructor() {
     this.apiUrl = CONFIG.AI_API_URL;
-    this.apiKey = CONFIG.OPENROUTER_API_KEY; // Now properly references local config
+    this.apiKey = null;
     this.isAvailable = false;
+    this.isInitialized = false; // NEW: Track initialization state
     this.fallbackResponses = new Map();
     this.requestQueue = [];
     this.isProcessingQueue = false;
 
     this.setupFallbackResponses();
-    this.checkServiceAvailability();
 
-    console.log("🤖 AI Service initialized");
-    console.log("🤖 API URL:", this.apiUrl);
-    console.log("🤖 Has API Key:", !!this.apiKey);
+    console.log("🤖 AI Service created (will initialize when first used)");
+  }
+
+  // NEW: Initialize the service when first needed
+  async initialize() {
+    if (this.isInitialized) return;
+
+    console.log("🤖 Initializing AI Service...");
+
+    // Wait for local config if in development
     if (CONFIG.IS_DEVELOPMENT) {
-      console.log(
-        "🤖 Development Mode: Using",
-        this.apiKey ? "local config API key" : "fallback responses only"
-      );
+      await CONFIG.waitForLocalConfig(2000); // Shorter timeout since game already waited
     }
+
+    await this.checkServiceAvailability();
+    this.isInitialized = true;
+
+    console.log("🤖 AI Service initialization complete");
   }
 
   setupFallbackResponses() {
@@ -66,16 +75,20 @@ class AIService {
   }
 
   async checkServiceAvailability() {
+    // Get the API key after local config has had time to load
+    this.apiKey = CONFIG.OPENROUTER_API_KEY;
+
     // In development, check if we have an API key
     if (CONFIG.IS_DEVELOPMENT) {
       if (!this.apiKey || !this.apiUrl) {
-        console.warn("🤖 AI API not configured properly.");
         if (!this.apiKey) {
           console.warn(
-            "🤖 Missing API key. Create js/utils/local.config.js with your OPENROUTER_API_KEY."
+            "🤖 No API key found in local config - using fallback responses"
+          );
+          console.log(
+            "🤖 To enable AI responses: add OPENROUTER_API_KEY to js/utils/local.config.js"
           );
         }
-        console.warn("🤖 Using fallback responses only.");
         this.isAvailable = false;
         return;
       }
@@ -88,9 +101,16 @@ class AIService {
       this.isAvailable = true;
       console.log("🤖 AI Service configured for production (using Vercel API)");
     }
+
+    console.log("🤖 Service available:", this.isAvailable);
   }
 
   async generateResponse(characterKey, message, conversationHistory = []) {
+    // NEW: Initialize on first use
+    if (!this.isInitialized) {
+      await this.initialize();
+    }
+
     const character = characters[characterKey];
     if (!character) {
       return this.getFallbackResponse("default");
@@ -370,6 +390,7 @@ class AIService {
   getStats() {
     return {
       isAvailable: this.isAvailable,
+      isInitialized: this.isInitialized,
       queueLength: this.requestQueue.length,
       fallbackResponseCount: Array.from(this.fallbackResponses.values()).reduce(
         (total, responses) => total + responses.length,

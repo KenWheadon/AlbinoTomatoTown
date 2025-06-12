@@ -25,14 +25,13 @@ const CONFIG = {
     if (this.IS_DEVELOPMENT) {
       // Check if local config has been loaded
       if (
-        typeof LOCAL_CONFIG !== "undefined" &&
-        LOCAL_CONFIG.OPENROUTER_API_KEY
+        typeof window !== "undefined" &&
+        window.LOCAL_CONFIG &&
+        window.LOCAL_CONFIG.OPENROUTER_API_KEY
       ) {
-        return LOCAL_CONFIG.OPENROUTER_API_KEY;
+        return window.LOCAL_CONFIG.OPENROUTER_API_KEY;
       } else {
-        console.warn(
-          "⚠️ LOCAL_CONFIG not found or missing API key. Create js/utils/local.config.js with your API key."
-        );
+        // Don't warn immediately - local config might still be loading
         return null;
       }
     } else {
@@ -59,21 +58,54 @@ const CONFIG = {
   ANIMATION_SPEED: 0.3,
   DEBUG: true, // Set to false for production
 
-  // Helper method to log current environment
-  logEnvironment() {
+  // Helper method to check if local config is available (for development)
+  isLocalConfigReady() {
+    return (
+      !this.IS_DEVELOPMENT ||
+      (typeof window !== "undefined" &&
+        window.LOCAL_CONFIG &&
+        window.LOCAL_CONFIG.OPENROUTER_API_KEY)
+    );
+  },
+
+  // Helper method to wait for local config to load
+  async waitForLocalConfig(timeoutMs = 5000) {
+    if (!this.IS_DEVELOPMENT) return true;
+
+    const startTime = Date.now();
+
+    while (Date.now() - startTime < timeoutMs) {
+      if (window.LOCAL_CONFIG && window.LOCAL_CONFIG.OPENROUTER_API_KEY) {
+        console.log("✅ Local config loaded successfully");
+        return true;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+
+    console.warn("⚠️ LOCAL_CONFIG not found or missing API key after timeout.");
+    console.warn(
+      "⚠️ Create js/utils/local.config.js with your OPENROUTER_API_KEY."
+    );
+    console.warn("⚠️ Using fallback responses only.");
+    return false;
+  },
+
+  // Helper method to log current environment - now async
+  async logEnvironment() {
     console.log("🌍 Environment Info:");
     console.log("  - Development:", this.IS_DEVELOPMENT);
     console.log("  - API URL:", this.AI_API_URL);
     console.log("  - Site URL:", this.SITE_URL);
-    console.log("  - Has API Key:", !!this.OPENROUTER_API_KEY);
+
     if (this.IS_DEVELOPMENT) {
-      console.log(
-        "  - Local Config Loaded:",
-        typeof LOCAL_CONFIG !== "undefined"
-      );
+      // Wait for local config to load before logging
+      const configReady = await this.waitForLocalConfig();
+      console.log("  - Local Config Loaded:", configReady);
+      console.log("  - Has API Key:", !!this.OPENROUTER_API_KEY);
+    } else {
+      console.log("  - Has API Key:", "Handled server-side");
     }
   },
 };
 
-// Log environment on load
-CONFIG.logEnvironment();
+// Don't log environment immediately - let the game engine handle it after local config loads

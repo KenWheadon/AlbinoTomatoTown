@@ -24,6 +24,15 @@ class GameEngine {
     // Show loading screen
     this.loadingScreen.show();
 
+    // FIXED: Wait for local config to load in development
+    if (CONFIG.IS_DEVELOPMENT) {
+      console.log("🔧 Development mode detected, waiting for local config...");
+      await CONFIG.waitForLocalConfig();
+    }
+
+    // Log environment info after config is ready
+    await CONFIG.logEnvironment();
+
     // Set up asset manager progress callback
     this.renderer.assetManager.setProgressCallback((progress) => {
       this.loadingScreen.updateProgress(progress);
