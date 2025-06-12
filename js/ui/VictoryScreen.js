@@ -3,8 +3,41 @@ class VictoryScreen {
     this.gameEngine = gameEngine;
     this.victoryElement = null;
     this.isShowing = false;
+    this.isUnlocked = false; // NEW: Track if victory has been achieved
+    this.victoryButton = null; // NEW: Button to reopen victory screen
 
     this.createVictoryUI();
+    this.createVictoryButton(); // NEW: Create the reopen button
+  }
+
+  // NEW: Create a button to reopen the victory screen
+  createVictoryButton() {
+    this.victoryButton = document.createElement("button");
+    this.victoryButton.className = "victory-trigger";
+    this.victoryButton.innerHTML = "🏆";
+    this.victoryButton.title = "View Victory Screen (V)";
+    this.victoryButton.style.display = "none"; // Hidden until victory is achieved
+
+    document.body.appendChild(this.victoryButton);
+
+    // Add click listener
+    this.victoryButton.addEventListener("click", () => {
+      this.show();
+    });
+
+    // Add keyboard shortcut (V key)
+    document.addEventListener("keydown", (e) => {
+      if (
+        (e.key === "v" || e.key === "V") &&
+        this.isUnlocked &&
+        !this.isShowing
+      ) {
+        if (!this.gameEngine.conversationManager.isConversationActive) {
+          e.preventDefault();
+          this.show();
+        }
+      }
+    });
   }
 
   createVictoryUI() {
@@ -111,6 +144,9 @@ class VictoryScreen {
         ) {
           this.gameEngine.reset();
           this.hide();
+          // NEW: Hide victory button and reset unlock status on game reset
+          this.isUnlocked = false;
+          this.victoryButton.style.display = "none";
         }
       });
   }
@@ -126,18 +162,30 @@ class VictoryScreen {
     // Show the screen
     this.victoryElement.classList.add("visible");
 
-    // FIXED: Prevent body scrollbars by setting overflow hidden
+    // FIXED: Prevent body scrollbars by setting overflow hidden on both html and body
+    document.documentElement.style.overflow = "hidden";
     document.body.style.overflow = "hidden";
 
-    // Play victory sequence
-    this.playVictorySequence();
+    // NEW: Only play victory sequence on first show (when unlocked)
+    if (!this.isUnlocked) {
+      this.playVictorySequence();
+      this.isUnlocked = true; // Mark as unlocked
+      this.victoryButton.style.display = "block"; // Show reopen button
 
-    // Play victory sound
-    if (this.gameEngine.renderer?.assetManager) {
-      // Play a special victory sound or use achievement sound
-      this.gameEngine.renderer.assetManager.playSound(
-        "effects/achievement.mp3",
-        0.8
+      // Play victory sound
+      if (this.gameEngine.renderer?.assetManager) {
+        this.gameEngine.renderer.assetManager.playSound(
+          "effects/achievement.mp3",
+          0.8
+        );
+      }
+    } else {
+      // Just show without animations for reopened victory screen
+      const content = this.victoryElement.querySelector(".victory-content");
+      gsap.fromTo(
+        content,
+        { scale: 0.8, opacity: 0 },
+        { scale: 1, opacity: 1, duration: 0.3, ease: "power2.out" }
       );
     }
 
@@ -148,7 +196,8 @@ class VictoryScreen {
     this.isShowing = false;
     this.victoryElement.classList.remove("visible");
 
-    // FIXED: Restore body scrolling
+    // FIXED: Restore body scrolling on both html and body
+    document.documentElement.style.overflow = "";
     document.body.style.overflow = "";
   }
 
@@ -348,13 +397,31 @@ class VictoryScreen {
     return achievementManager.hasUnlockedAll();
   }
 
+  // NEW: Check if victory has been unlocked (for external use)
+  isVictoryUnlocked() {
+    return this.isUnlocked;
+  }
+
+  // NEW: Force unlock victory (for debugging or manual triggers)
+  forceUnlock() {
+    this.isUnlocked = true;
+    this.victoryButton.style.display = "block";
+  }
+
   destroy() {
     // FIXED: Restore body overflow when destroying
+    document.documentElement.style.overflow = "";
     document.body.style.overflow = "";
 
     if (this.victoryElement && this.victoryElement.parentNode) {
       this.victoryElement.parentNode.removeChild(this.victoryElement);
     }
+
+    // NEW: Clean up victory button
+    if (this.victoryButton && this.victoryButton.parentNode) {
+      this.victoryButton.parentNode.removeChild(this.victoryButton);
+    }
+
     console.log("🗑️ Victory screen destroyed");
   }
 }
