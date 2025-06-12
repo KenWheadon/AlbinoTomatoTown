@@ -1,0 +1,143 @@
+/* Location Navigation Styles */
+.location-navigator {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 70px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.4));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  z-index: 100;
+  backdrop-filter: blur(5px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.nav-buttons-container {
+  display: flex;
+  gap: 12px;
+  flex: 1;
+  justify-content: center;
+}
+
+.location-nav-button {
+  padding: 10px 18px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid #4a5d3a;
+  border-radius: 10px;
+  color: #2d3d2d;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  min-width: 80px;
+  text-align: center;
+}
+
+.location-nav-button:hover {
+  background: rgba(255, 255, 255, 1);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+  border-color: #5d7a4a;
+}
+
+.location-nav-button:active {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+}
+
+.location-nav-button.current {
+  background: rgba(74, 93, 58, 0.9);
+  color: white;
+  border-color: #8bc34a;
+}
+
+.location-nav-button::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  transition: left 0.5s;
+}
+
+.location-nav-button:hover::before {
+  left: 100%;
+}
+
+.nav-info {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  text-align: right;
+  min-width: 120px;
+}
+
+.current-location {
+  font-weight: bold;
+  color: #8bc34a;
+}
+
+.location-preview {
+  position: fixed;
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  max-width: 300px;
+  text-align: center;
+  pointer-events: none;
+  z-index: 1000;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+.nav-shortcut {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  font-size: 10px;
+  opacity: 0.7;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 1px 3px;
+  border-radius: 3px;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .location-navigator {
+    height: 60px;
+    padding: 0 10px;
+  }
+
+  .nav-buttons-container {
+    gap: 8px;
+  }
+
+  .location-nav-button {
+    padding: 8px 12px;
+    font-size: 12px;
+    min-width: 60px;
+  }
+
+  .nav-info {
+    min-width: 80px;
+    font-size: 11px;
+  }
+
+  .nav-shortcut {
+    display: none;
+  }
+}
