@@ -383,23 +383,30 @@ class AchievementManager {
         ? `<div class="achievement-unlock-time">Unlocked: ${achievement.unlockedAt.toLocaleDateString()}</div>`
         : "";
 
-    // Only show description for unlocked achievements
-    const descriptionHtml = achievement.isUnlocked
-      ? `<div class="achievement-description">${achievement.description}</div>`
-      : "";
+    // Only show title and description for unlocked achievements
+    // For locked achievements, only show hint
+    let contentHtml;
+    if (achievement.isUnlocked) {
+      contentHtml = `
+        <div class="achievement-title">${achievement.title}</div>
+        <div class="achievement-description">${achievement.description}</div>
+        ${unlockTimeHtml}
+      `;
+    } else {
+      contentHtml = `
+        <div class="achievement-title">???</div>
+        <div class="achievement-hint">${
+          achievement.hint || "Keep exploring to unlock this achievement!"
+        }</div>
+      `;
+    }
 
     element.innerHTML = `
             <div class="achievement-icon">
                 ${achievement.isUnlocked ? "🏆" : "🔒"}
             </div>
             <div class="achievement-content">
-                <div class="achievement-title">${achievement.title}</div>
-                ${descriptionHtml}
-                <div class="achievement-hint">${
-                  achievement.hint ||
-                  "Keep exploring to unlock this achievement!"
-                }</div>
-                ${unlockTimeHtml}
+                ${contentHtml}
             </div>
         `;
 

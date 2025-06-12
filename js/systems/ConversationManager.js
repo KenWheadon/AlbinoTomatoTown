@@ -21,8 +21,11 @@ class ConversationManager {
     this.conversationPanel.innerHTML = `
             <div class="conversation-header">
                 <div class="character-info">
-                    <div class="character-name"></div>
-                    <div class="character-description"></div>
+                    <div class="character-avatar"></div>
+                    <div class="character-details">
+                        <div class="character-name"></div>
+                        <div class="character-description"></div>
+                    </div>
                 </div>
                 <button class="close-conversation">×</button>
             </div>
@@ -74,6 +77,14 @@ class ConversationManager {
     this.conversationPanel.addEventListener("click", (e) => {
       e.stopPropagation();
     });
+
+    // Listen for location changes to close conversations
+    GameEvents.on(GAME_EVENTS.LOCATION_CHANGED, () => {
+      if (this.isConversationActive) {
+        console.log("💬 Closing conversation due to location change");
+        this.endConversation();
+      }
+    });
   }
 
   async startConversation(characterKey, character) {
@@ -81,11 +92,20 @@ class ConversationManager {
       `💬 START CONVERSATION - Current: ${this.currentCharacter}, New: ${characterKey}, Active: ${this.isConversationActive}`
     );
 
-    if (this.isConversationActive) {
+    // If clicking the same character while conversation is active, do nothing
+    if (this.isConversationActive && this.currentCharacter === characterKey) {
+      console.log(`💬 Already talking to ${characterKey}, ignoring click`);
+      return;
+    }
+
+    // If a different conversation is active, end it properly first
+    if (this.isConversationActive && this.currentCharacter !== characterKey) {
       console.log(
-        `💬 Ending existing conversation with ${this.currentCharacter}`
+        `💬 Switching conversation from ${this.currentCharacter} to ${characterKey}`
       );
       this.endConversation();
+      // Add a small delay to ensure cleanup completes
+      await new Promise((resolve) => setTimeout(resolve, 100));
     }
 
     this.currentCharacter = characterKey;
@@ -304,6 +324,23 @@ class ConversationManager {
       characterName;
     this.conversationPanel.querySelector(".character-description").textContent =
       character.description;
+
+    // Update character avatar
+    const avatar = this.conversationPanel.querySelector(".character-avatar");
+    const imagePath = `images/characters/${character.img}.png`;
+    const preloadedImage = this.gameEngine.renderer.assetManager.getImage(
+      `characters/${character.img}`
+    );
+
+    if (preloadedImage) {
+      avatar.style.backgroundImage = `url(${preloadedImage.src})`;
+    } else {
+      avatar.style.backgroundImage = `url(${imagePath})`;
+    }
+
+    avatar.style.backgroundSize = "cover";
+    avatar.style.backgroundPosition = "center";
+    avatar.style.backgroundRepeat = "no-repeat";
   }
 
   clearMessages() {
@@ -349,6 +386,8 @@ class ConversationManager {
 
   endConversation() {
     if (!this.isConversationActive) return;
+
+    console.log(`💬 Ending conversation with ${this.currentCharacter}`);
 
     this.isConversationActive = false;
     this.hideConversation();

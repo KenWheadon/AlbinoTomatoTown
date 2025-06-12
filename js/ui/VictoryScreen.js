@@ -259,7 +259,7 @@ class VictoryScreen {
       );
     });
 
-    // Confetti effect
+    // Confetti effect (simplified to avoid overflow issues)
     this.createConfetti();
   }
 
@@ -267,7 +267,21 @@ class VictoryScreen {
     const colors = ["#FFD700", "#4CAF50", "#2196F3", "#FF9800", "#E91E63"];
     const emojis = ["🍅", "🥒", "🫑", "🎃", "⭐", "🎉", "✨"];
 
-    for (let i = 0; i < 50; i++) {
+    // Create confetti container to control overflow
+    const confettiContainer = document.createElement("div");
+    confettiContainer.className = "confetti-container";
+    confettiContainer.style.position = "fixed";
+    confettiContainer.style.top = "0";
+    confettiContainer.style.left = "0";
+    confettiContainer.style.width = "100vw";
+    confettiContainer.style.height = "100vh";
+    confettiContainer.style.pointerEvents = "none";
+    confettiContainer.style.overflow = "hidden";
+    confettiContainer.style.zIndex = "10000";
+
+    document.body.appendChild(confettiContainer);
+
+    for (let i = 0; i < 30; i++) {
       setTimeout(() => {
         const confetti = document.createElement("div");
         const useEmoji = Math.random() > 0.7;
@@ -284,13 +298,12 @@ class VictoryScreen {
           confetti.style.borderRadius = "50%";
         }
 
-        confetti.style.position = "fixed";
+        confetti.style.position = "absolute";
         confetti.style.left = Math.random() * 100 + "vw";
         confetti.style.top = "-20px";
         confetti.style.pointerEvents = "none";
-        confetti.style.zIndex = "10001";
 
-        document.body.appendChild(confetti);
+        confettiContainer.appendChild(confetti);
 
         gsap.to(confetti, {
           y: window.innerHeight + 50,
@@ -298,10 +311,21 @@ class VictoryScreen {
           rotation: Math.random() * 360,
           duration: Math.random() * 3 + 2,
           ease: "power2.in",
-          onComplete: () => confetti.remove(),
+          onComplete: () => {
+            if (confetti.parentNode) {
+              confetti.parentNode.removeChild(confetti);
+            }
+          },
         });
       }, i * 100);
     }
+
+    // Clean up confetti container after all animations
+    setTimeout(() => {
+      if (confettiContainer.parentNode) {
+        confettiContainer.parentNode.removeChild(confettiContainer);
+      }
+    }, 8000);
   }
 
   // Check if victory conditions are met

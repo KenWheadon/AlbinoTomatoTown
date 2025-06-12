@@ -69,7 +69,6 @@ class ExplorationDrawer {
         <button class="exploration-tab" data-filter="characters">Characters</button>
         <button class="exploration-tab" data-filter="items">Items</button>
         <button class="exploration-tab" data-filter="discovered">Found</button>
-        <button class="exploration-tab" data-filter="undiscovered">Missing</button>
       </div>
       
       <div class="exploration-content">
@@ -356,8 +355,6 @@ class ExplorationDrawer {
         return items.filter((item) => item.type === "item");
       case "discovered":
         return items.filter((item) => item.discovered);
-      case "undiscovered":
-        return items.filter((item) => !item.discovered);
       default:
         return items;
     }
@@ -371,9 +368,10 @@ class ExplorationDrawer {
     element.dataset.key = item.key;
     element.dataset.type = item.type;
 
-    // Get image
-    let imageStyle = "";
+    // Only show content for discovered items
     if (item.discovered) {
+      // Get image
+      let imageStyle = "";
       const imagePath = `images/${
         item.type === "character" ? "characters" : "items"
       }/${item.image}.png`;
@@ -386,23 +384,28 @@ class ExplorationDrawer {
       } else {
         imageStyle = `background-image: url(${imagePath})`;
       }
-    }
 
-    element.innerHTML = `
-      <div class="exploration-item-type ${item.type}">${item.type}</div>
-      <div class="exploration-item-image" style="${imageStyle}"></div>
-      <div class="exploration-item-name">${item.name}</div>
-      <div class="exploration-item-description">
-        ${item.discovered ? item.description : "Interact to discover..."}
-      </div>
-      <div class="exploration-item-location">📍 ${item.location}</div>
-    `;
+      element.innerHTML = `
+        <div class="exploration-item-type ${item.type}">${item.type}</div>
+        <div class="exploration-item-image" style="${imageStyle}"></div>
+        <div class="exploration-item-name">${item.name}</div>
+        <div class="exploration-item-description">${item.description}</div>
+        <div class="exploration-item-location">📍 ${item.location}</div>
+      `;
 
-    // Add click handler for discovered items
-    if (item.discovered) {
+      // Add click handler for discovered items
       element.addEventListener("click", () => {
         this.showItemDetails(item);
       });
+    } else {
+      // Undiscovered items show only minimal info
+      element.innerHTML = `
+        <div class="exploration-item-type ${item.type}">${item.type}</div>
+        <div class="exploration-item-image undiscovered-placeholder">?</div>
+        <div class="exploration-item-name">???</div>
+        <div class="exploration-item-description">Explore to discover...</div>
+        <div class="exploration-item-location">📍 ???</div>
+      `;
     }
 
     return element;
