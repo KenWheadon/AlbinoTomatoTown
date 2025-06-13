@@ -7,7 +7,7 @@ class ConversationManager {
     this.conversationPanel = null;
     this.messageHistory = [];
     this.isWaitingForResponse = false;
-    this.isClosing = false; // NEW: Flag to prevent race conditions during closing
+    this.isClosing = false;
 
     this.createConversationUI();
     this.setupEventListeners();
@@ -16,41 +16,40 @@ class ConversationManager {
   }
 
   createConversationUI() {
-    // Create conversation panel
     this.conversationPanel = document.createElement("div");
     this.conversationPanel.className = "conversation-panel";
     this.conversationPanel.innerHTML = `
-            <div class="conversation-header">
-                <div class="character-info">
-                    <div class="character-avatar"></div>
-                    <div class="character-details">
-                        <div class="character-name"></div>
-                        <div class="character-description"></div>
-                    </div>
-                </div>
-                <button class="close-conversation">×</button>
-            </div>
-            <div class="conversation-messages"></div>
-            <div class="conversation-input-area">
-                <input type="text" class="conversation-input" placeholder="Type your message...">
-                <button class="send-button">Send</button>
-            </div>
-            <div class="conversation-footer">
-                <div class="typing-indicator">
-                    <span class="typing-dots">
-                        <span></span><span></span><span></span>
-                    </span>
-                    <span class="typing-text">Character is thinking...</span>
-                </div>
-            </div>
-        `;
+      <div class="conversation-header">
+        <div class="character-info">
+          <div class="character-avatar"></div>
+          <div class="character-details">
+            <div class="character-name"></div>
+            <div class="character-description"></div>
+          </div>
+        </div>
+        <button class="close-conversation">×</button>
+      </div>
+      <div class="conversation-messages"></div>
+      <div class="conversation-input-area">
+        <input type="text" class="conversation-input" placeholder="Type your message...">
+        <button class="send-button">Send</button>
+      </div>
+      <div class="conversation-footer">
+        <div class="typing-indicator">
+          <span class="typing-dots">
+            <span></span><span></span><span></span>
+          </span>
+          <span class="typing-text">Character is thinking...</span>
+        </div>
+      </div>
+    `;
 
     document.body.appendChild(this.conversationPanel);
     this.hideConversation();
   }
 
   setupEventListeners() {
-    // Close button - ONLY way to close conversation
+    // Close button
     this.conversationPanel
       .querySelector(".close-conversation")
       .addEventListener("click", () => {
@@ -74,7 +73,7 @@ class ConversationManager {
         }
       });
 
-    // Stop propagation on conversation panel clicks to prevent outside clicks
+    // Stop propagation on conversation panel clicks
     this.conversationPanel.addEventListener("click", (e) => {
       e.stopPropagation();
     });
@@ -93,7 +92,7 @@ class ConversationManager {
       `💬 START CONVERSATION - Current: ${this.currentCharacter}, New: ${characterKey}, Active: ${this.isConversationActive}, Closing: ${this.isClosing}`
     );
 
-    // FIXED: If clicking the same character while conversation is active, do nothing
+    // If clicking the same character while conversation is active, do nothing
     if (
       this.isConversationActive &&
       this.currentCharacter === characterKey &&
@@ -103,13 +102,13 @@ class ConversationManager {
       return;
     }
 
-    // FIXED: If currently closing a conversation, wait for it to complete
+    // If currently closing a conversation, wait for it to complete
     if (this.isClosing) {
       console.log(`💬 Currently closing conversation, waiting...`);
       await this.waitForClose();
     }
 
-    // FIXED: If a different conversation is active, end it properly first
+    // If a different conversation is active, end it properly first
     if (this.isConversationActive && this.currentCharacter !== characterKey) {
       console.log(
         `💬 Switching conversation from ${this.currentCharacter} to ${characterKey}`
@@ -117,7 +116,7 @@ class ConversationManager {
       await this.endConversationAndWait();
     }
 
-    // FIXED: Double-check we're not in a closing state after waiting
+    // Double-check we're not in a closing state after waiting
     if (this.isClosing) {
       await this.waitForClose();
     }
@@ -144,9 +143,12 @@ class ConversationManager {
     );
 
     // Generate greeting
-    const greeting = await this.generateGreeting(character, history);
-    console.log(`💬 Generated greeting: "${greeting}"`);
-    this.addMessage("character", greeting);
+    const greetingResponse = await this.generateGreeting(character, history);
+    console.log(`💬 Generated greeting response:`, greetingResponse);
+
+    // Extract dialogue from JSON response
+    const greetingText = this.extractDialogue(greetingResponse);
+    this.addMessage("character", greetingText);
 
     // Focus input
     this.conversationPanel.querySelector(".conversation-input").focus();
@@ -160,7 +162,7 @@ class ConversationManager {
     console.log(`💬 Conversation with ${characterKey} fully initialized`);
   }
 
-  // NEW: Helper method to wait for conversation to finish closing
+  // Helper method to wait for conversation to finish closing
   async waitForClose() {
     return new Promise((resolve) => {
       const checkClosed = () => {
@@ -174,7 +176,7 @@ class ConversationManager {
     });
   }
 
-  // NEW: End conversation and wait for it to complete
+  // End conversation and wait for it to complete
   async endConversationAndWait() {
     this.endConversation();
     await this.waitForClose();
@@ -195,19 +197,42 @@ class ConversationManager {
   }
 
   getFirstMeetingGreeting(character) {
-    // Simple greeting based on character personality
+    // Simple JSON greeting based on character personality
     const prompt = character.prompt.toLowerCase();
 
     if (prompt.includes("shy") || prompt.includes("bashful")) {
-      return "Oh! H-hello there... I wasn't expecting visitors...";
+      return {
+        internal_monologue:
+          "Oh no, someone's here. I wasn't expecting visitors and I feel so nervous.",
+        dialogue: "Oh! H-hello there... I wasn't expecting visitors...",
+      };
     } else if (prompt.includes("wise") || prompt.includes("ancient")) {
-      return "Welcome, young traveler. I sense you have questions to ask.";
+      return {
+        internal_monologue:
+          "Another seeker has found their way to me. I sense they have questions.",
+        dialogue: "Welcome, young traveler. I sense you have questions to ask.",
+      };
     } else if (prompt.includes("cheerful") || prompt.includes("excited")) {
-      return "Oh wonderful! A new friend has come to visit! How delightful!";
+      return {
+        internal_monologue:
+          "Oh wonderful! A new friend has come to visit! This is so exciting!",
+        dialogue:
+          "Oh wonderful! A new friend has come to visit! How delightful!",
+      };
     } else if (prompt.includes("mysterious")) {
-      return "Ah... so you've found me. I wondered when someone would come asking the right questions...";
+      return {
+        internal_monologue:
+          "So they've found me at last. I wondered when someone would come with the right questions.",
+        dialogue:
+          "Ah... so you've found me. I wondered when someone would come asking the right questions...",
+      };
     } else {
-      return "Hello there! Nice to meet you. What brings you to our garden?";
+      return {
+        internal_monologue:
+          "A new visitor has arrived in our garden. I should be welcoming.",
+        dialogue:
+          "Hello there! Nice to meet you. What brings you to our garden?",
+      };
     }
   }
 
@@ -245,29 +270,32 @@ class ConversationManager {
 
       // Generate AI response
       console.log(`💬 Requesting AI response from ${this.currentCharacter}`);
-      const response = await this.aiService.generateResponse(
+      const responseData = await this.aiService.generateResponse(
         this.currentCharacter,
         message,
         history
       );
-      console.log(`💬 AI RESPONSE RECEIVED: "${response}"`);
+      console.log(`💬 AI RESPONSE RECEIVED:`, responseData);
 
       // Hide typing indicator
       this.hideTypingIndicator();
 
-      // Add character response
-      this.addMessage("character", response);
+      // Extract dialogue and ignore internal monologue
+      const dialogueText = this.extractDialogue(responseData);
 
-      // Save to conversation history
+      // Add character response
+      this.addMessage("character", dialogueText);
+
+      // Save to conversation history (save the dialogue text, not the full JSON)
       this.gameEngine.gameState.addConversation(
         this.currentCharacter,
         message,
-        response
+        dialogueText
       );
       console.log(`💬 Conversation saved to game state`);
 
-      // Check for achievement triggers
-      this.checkAchievementTriggers(message, response);
+      // Check for achievement triggers using the dialogue text
+      this.checkAchievementTriggers(message, dialogueText);
     } catch (error) {
       console.error("💬 ERROR generating response:", error);
       this.hideTypingIndicator();
@@ -286,6 +314,92 @@ class ConversationManager {
     console.log(`💬 Message send cycle completed`);
   }
 
+  // Extract dialogue text from various response formats
+  extractDialogue(responseData) {
+    // If it's already a proper object with dialogue property
+    if (
+      typeof responseData === "object" &&
+      responseData &&
+      responseData.dialogue
+    ) {
+      return responseData.dialogue;
+    }
+
+    // If it's a string, try to extract dialogue from various formats
+    if (typeof responseData === "string") {
+      const text = responseData.trim();
+
+      // Try to parse as JSON first
+      try {
+        const parsed = JSON.parse(text);
+        if (parsed.dialogue) {
+          return parsed.dialogue;
+        }
+      } catch (e) {
+        // Not valid JSON, continue with string parsing
+      }
+
+      // Handle format: (internal_monologue: ...) (dialogue: ...)
+      const dialogueMatch = text.match(/\(dialogue:\s*([^)]+)\)/);
+      if (dialogueMatch) {
+        return dialogueMatch[1].trim();
+      }
+
+      // Handle format: "dialogue": "text"
+      const quotedDialogueMatch = text.match(/"dialogue":\s*"([^"]+)"/);
+      if (quotedDialogueMatch) {
+        return quotedDialogueMatch[1].trim();
+      }
+
+      // Handle format: dialogue: text (without quotes or parentheses)
+      const simpleDialogueMatch = text.match(
+        /dialogue:\s*(.+?)(?:\n|$|internal_monologue)/i
+      );
+      if (simpleDialogueMatch) {
+        return simpleDialogueMatch[1].trim().replace(/[",]/g, "");
+      }
+
+      // Handle format where dialogue comes after internal_monologue
+      const afterMonologueMatch = text.match(
+        /internal_monologue:.*?dialogue:\s*(.+?)(?:\}|$)/is
+      );
+      if (afterMonologueMatch) {
+        return afterMonologueMatch[1].trim().replace(/[",]/g, "");
+      }
+
+      // If no dialogue pattern found but it looks like it contains dialogue markers
+      if (text.includes("dialogue:")) {
+        // Extract everything after 'dialogue:' until end or next field
+        const afterDialogue = text.split("dialogue:")[1];
+        if (afterDialogue) {
+          return afterDialogue
+            .trim()
+            .replace(/^[",\s]+|[",\s]+$/g, "")
+            .split(/[}\n]/)[0]
+            .trim();
+        }
+      }
+
+      // If none of the above patterns match, check if it's just plain dialogue text
+      // (no internal_monologue markers)
+      if (!text.includes("internal_monologue") && !text.includes("dialogue:")) {
+        return text;
+      }
+    }
+
+    console.warn("💬 Could not extract dialogue from response:", responseData);
+    return "I'm having trouble finding the right words...";
+  }
+
+  // Update character thoughts display (internal use only - not shown to player)
+  updateCharacterThoughts(thoughts) {
+    // This method exists for potential future use or debugging
+    // The internal monologue is not displayed to the player
+    if (CONFIG.DEBUG && thoughts) {
+      console.log(`💭 ${this.currentCharacter} thinks: ${thoughts}`);
+    }
+  }
+
   addMessage(sender, text) {
     const messagesContainer = this.conversationPanel.querySelector(
       ".conversation-messages"
@@ -301,9 +415,9 @@ class ConversationManager {
     });
 
     messageElement.innerHTML = `
-            <div class="message-bubble">${text}</div>
-            <div class="message-time">${timeString}</div>
-        `;
+      <div class="message-bubble">${text}</div>
+      <div class="message-time">${timeString}</div>
+    `;
 
     messagesContainer.appendChild(messageElement);
 
@@ -390,18 +504,8 @@ class ConversationManager {
     // Animate in
     gsap.fromTo(
       this.conversationPanel,
-      {
-        opacity: 0,
-        scale: 0.8,
-        y: 50,
-      },
-      {
-        opacity: 1,
-        scale: 1,
-        y: 0,
-        duration: 0.4,
-        ease: "back.out(1.7)",
-      }
+      { opacity: 0, scale: 0.8, y: 50 },
+      { opacity: 1, scale: 1, y: 0, duration: 0.4, ease: "back.out(1.7)" }
     );
   }
 
@@ -414,7 +518,7 @@ class ConversationManager {
       ease: "power2.in",
       onComplete: () => {
         this.conversationPanel.style.display = "none";
-        this.isClosing = false; // FIXED: Clear closing flag when animation completes
+        this.isClosing = false;
       },
     });
   }
@@ -424,7 +528,7 @@ class ConversationManager {
 
     console.log(`💬 Ending conversation with ${this.currentCharacter}`);
 
-    this.isClosing = true; // FIXED: Set closing flag to prevent race conditions
+    this.isClosing = true;
     this.isConversationActive = false;
     this.hideConversation();
 
@@ -452,7 +556,7 @@ class ConversationManager {
       currentCharacter: this.currentCharacter,
       messageCount: this.messageHistory.length,
       isWaiting: this.isWaitingForResponse,
-      isClosing: this.isClosing, // FIXED: Include closing state in status
+      isClosing: this.isClosing,
     };
   }
 
